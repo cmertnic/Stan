@@ -9,9 +9,8 @@ const { initializeDefaultServerSettings, getServerSettings, } = require('./datab
 const { getAllMemberIds, updateMembersInfo } = require('./database/membersDb');
 const { removeExpiredWarnings } = require('./database/warningsDb');
 const { removeExpiredMutes } = require('./database/mutesDb');
-const { initializeI18next, i18next,t } = require('./i18n');
+const { initializeI18next, i18next, t } = require('./i18n');
 const { createLogChannel } = require('./events');
-
 // Инициализируем массивы для хранения черного списка и плохих ссылок
 let blacklist = [];
 let bad_links = [];
@@ -115,8 +114,7 @@ const rest = new REST().setToken(process.env.TOKEN);
     });
 
     robot.on('ready', async () => {
-      console.log(`${robot.user.username} готов работать`);
-
+      console.log(`${robot.user.username} готов вкалывать`);
       const guilds = robot.guilds.cache;
 
       for (const guild of guilds.values()) {
@@ -224,13 +222,13 @@ const rest = new REST().setToken(process.env.TOKEN);
 
       let blacklistToUse, bad_linksToUse;
 
-      if (uniteAutomodBlacklists) {
+      if (uniteAutomodBlacklists && automodBlacklist !== 'fuck') {
         blacklistToUse = [...new Set([...(automodBlacklist || '').split(','), ...blacklist])];
       } else {
         blacklistToUse = [...(automodBlacklist || '').split(',')];
       }
 
-      if (uniteAutomodBadLinks) {
+      if (uniteAutomodBadLinks && automodBadLinks !== 'azino777cashcazino-slots.ru') {
         bad_linksToUse = [...new Set([...(automodBadLinks || '').split(','), ...bad_links])];
       } else {
         bad_linksToUse = [...(automodBadLinks || '').split(',')];
@@ -299,6 +297,7 @@ const rest = new REST().setToken(process.env.TOKEN);
   } catch (error) {
     console.error('Произошла непредвиденная ошибка:', error);
     console.error('Перезапуск бота...');
+
     // Перезапуск бота
     setTimeout(() => {
       require('child_process').exec('npm run start', (error, stdout, stderr) => {

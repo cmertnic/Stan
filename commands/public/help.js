@@ -2,7 +2,7 @@
 const { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { i18next, t } = require('../../i18n');
-
+const userCommandCooldowns = new Map();
 // Экспортируем объект с данными и исполнением команды
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,6 +17,11 @@ module.exports = {
         // Проверка, что пользователь не бот
         if (interaction.user.bot) return;
 
+        const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+        if (commandCooldown && commandCooldown.command === 'help' && Date.now() < commandCooldown.endsAt) {
+          const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+          return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+        }
         // Создаем embed для главной страницы помощи
         const mainEmbed = new EmbedBuilder()
             .setColor('White')
@@ -54,7 +59,8 @@ module.exports = {
                 { name: (i18next.t(`help-js_Commands_for_moderators_page_name_10`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_10`)) },
                 { name: (i18next.t(`help-js_Commands_for_moderators_page_name_11`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_11`)) },
                 { name: (i18next.t(`help-js_Commands_for_moderators_page_name_12`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_12`)) },
-                { name: (i18next.t(`help-js_Commands_for_moderators_page_name_13`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_13`)) }
+                { name: (i18next.t(`help-js_Commands_for_moderators_page_name_13`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_13`)) },
+                { name: (i18next.t(`help-js_Commands_for_moderators_page_name_14`)), value: (i18next.t(`help-js_Commands_for_moderators_page_value_14`)) }
             ]);
 
         // Создаем embed для страницы дополнительных команд
@@ -99,17 +105,24 @@ module.exports = {
         async function rollback(i) {
             await i.update({ embeds: [mainEmbed], components: [row] });
         }
-
+        userCommandCooldowns.set(interaction.user.id, { command: 'help', endsAt: Date.now() + 300200 });
         collector.on('collect', async (i) => {
             if (i.customId === 'community') {
                 await i.update({ embeds: [communityEmbed], components: [row] });
+                await new Promise(resolve => setTimeout(resolve, 100));
             } else if (i.customId === 'moderation') {
                 await i.update({ embeds: [moderationEmbed], components: [row] });
+                await new Promise(resolve => setTimeout(resolve, 100));
             } else if (i.customId === 'extra') {
                 await i.update({ embeds: [extraPageEmbed], components: [row] });
+                await new Promise(resolve => setTimeout(resolve, 100));
             } else if (i.customId === 'rollback') {
                 await rollback(i);
             }
         });
+        setTimeout(() => {
+            userCommandCooldowns.delete(interaction.user.id);
+          }, 300200);
     }
+    
 };

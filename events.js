@@ -434,14 +434,6 @@ async function validateSettingValue(settingKey, value, interaction, guildId) {
             }
             break;
 
-        // Валидация для языкового кода
-        case 'language':
-            if (typeof value !== 'string' || value.length !== 3 || !validLanguages.includes(value)) {
-                isValid = false;
-                errorMessage = i18next.t('settings-js_language_error', { settingKey: settingKey });
-            }
-            break;
-
         // Валидация для duration
         case 'muteDuration':
         case 'warningDuration':
@@ -588,7 +580,6 @@ async function displaySettings(interaction, config, page = 1) {
         { key: 'clearLogChannelNameUse', name: i18next.t('settings-js_buttons_name_19'), value: String(config.clearLogChannelNameUse) },
         { key: 'clearNotice', name: i18next.t('settings-js_buttons_name_20'), value: String(config.clearNotice) },
         { key: 'logChannelName', name: i18next.t('settings-js_buttons_name_21'), value: config.logChannelName },
-        { key: 'language', name: i18next.t('settings-js_buttons_name_22'), value: config.language },
         { key: 'automod', name: i18next.t('settings-js_buttons_name_23'), value: String(config.automod) },
         { key: 'NotAutomodChannels', name: i18next.t('settings-js_buttons_name_24'), value: String(config.NotAutomodChannels) },
         { key: 'automodBlacklist', name: i18next.t('settings-js_buttons_name_25'), value: String(config.automodBlacklist) },

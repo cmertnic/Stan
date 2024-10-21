@@ -1,4 +1,5 @@
 {
+    "cooldown": "명령이 롤백 중입니다. 명령을 다시 호출하기 전에 {{timeLeft}} 초 동안 기다리십시오.",
     "error_id_or_tag": "- 유효한 사용자 ID 또는 참조를 입력하세요.",
     "error_private_messages": "이 명령은 비공개 메시지에서는 작동하지 않습니다",
     "error_bot_member": "- 봇 구성원을 찾을 수 없습니다.",
@@ -7,7 +8,7 @@
     "error_not_found_new_messages": "- 14일보다 오래된 메시지가 발견되지 않았습니다.",
     "error_not_delete_messages": "메시지를 삭제하는 동안 오류가 발생했습니다:",
     "error_not_found_messages_to_delete": "- 삭제할 메시지를 하나 이상 찾을 수 없습니다.",
-    "с": "- 명령을 실행하는 동안 오류가 발생했습니다.",
+    "Error": "- 명령을 실행하는 동안 오류가 발생했습니다.",
     "Error_log": "- 로깅 채널로 메시지를 보내는 중 오류 발생: {{error}}",
     "Error_search_log": "- 로깅 채널을 찾을 수 없습니다.",
     "User_not_found": "- 서버에서 사용자를 찾을 수 없습니다.",
@@ -121,6 +122,7 @@
     "help-js_Commands_for_moderators_page_name_11": "/mutelist",
     "help-js_Commands_for_moderators_page_name_12": "/warnlist",
     "help-js_Commands_for_moderators_page_name_13": "/test",
+    "help-js_Commands_for_moderators_page_name_14": "/language",
     "help-js_Commands_for_moderators_page_value_1": "메시지가 14일보다 오래된 경우 메시지 1개를 지우고 이전 메시지 이전의 모든 메시지를 삭제합니다.",
     "help-js_Commands_for_moderators_page_value_2": "참가자에게 이유와 함께 경고를 제공합니다(기본적으로 최대 3개의 경고, 기본적으로 최소 30분). 예: /warn @name 30m 도발적인 행동",
     "help-js_Commands_for_moderators_page_value_3": "회원의 가장 최근 경고를 삭제합니다. 예: /deleteWarn @name",
@@ -134,6 +136,7 @@
     "help-js_Commands_for_moderators_page_value_11": "음소거 목록을 표시합니다",
     "help-js_Commands_for_moderators_page_value_12": "경고 목록을 불러옵니다",
     "help-js_Commands_for_moderators_page_value_13": "서버에 필요한 모든 종속성을 확인합니다",
+    "help-js_Commands_for_moderators_page_value_14": "서버 언어를 변경할 수 있습니다",
     "help-js_extra_page_title": "추가 정보",
     "help-js_extra_page_name_1": "무엇을 쓸 수 없나요?",
     "help-js_extra_page_name_2": "도움말 명령 실행 시간",
@@ -316,7 +319,7 @@
     "language-js_language_hin": "Hin हिंदी",
     "language-js_language_jpn": "Jpn 日本語",
     "language-js_language_kor": "Kor 한국인",
-    "language-js_idioma_por": "Por português",
+    "language-js_language_por": "Por português",
     "language-js_language_rus": "Rus Русский",
     "language-js_language_spa": "Spa Español"
 }

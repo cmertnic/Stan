@@ -1,7 +1,7 @@
 // Импортируем необходимые классы и модули
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, SlashCommandBuilder, PermissionsBitField } = require('discord.js');
 const { i18next, t } = require('../../i18n');
-
+const userCommandCooldowns = new Map();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('banlist')
@@ -10,7 +10,11 @@ module.exports = {
   async execute(robot, interaction) {
     // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
     await interaction.deferReply({ ephemeral: true });
-
+    const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+    if (commandCooldown && commandCooldown.command === 'banlist' && Date.now() < commandCooldown.endsAt) {
+      const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), ephemeral: true });
+    }
     try {
       if (interaction.user.bot) return;
       if (interaction.channel.type === ChannelType.DM) {
@@ -115,7 +119,7 @@ module.exports = {
       // Создаем сборщик сообщений
       const filter = (i) => i.user.id === interaction.user.id;
       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
-
+      userCommandCooldowns.set(interaction.user.id, { command: 'banlist', endsAt: Date.now() + 300200 });
       // Обработка кликов по кнопкам пагинации
       collector.on('collect', async (i) => {
         if (i.deferred || i.replied) return;
@@ -130,5 +134,8 @@ module.exports = {
       console.error(`Произошла ошибка: ${error.message}`);
       return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
     }
+    setTimeout(() => {
+      userCommandCooldowns.delete(interaction.user.id);
+    }, 300200);
   },
 };

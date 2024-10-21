@@ -5,7 +5,7 @@ const {Client ,ChannelType, SlashCommandBuilder } = require('discord.js');
 const { i18next, t } = require('../../i18n');
 const USER_OPTION_NAME = i18next.t('report-js_user');
 const REASON_OPTION_NAME = i18next.t('report-js_reason');
-
+const userCommandCooldowns = new Map();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('report')
@@ -27,6 +27,12 @@ module.exports = {
      * @param {CommandInteraction} interaction - объект взаимодействия с командой
      */
     async execute(robot, interaction) {
+        if (interaction.user.bot) return;
+        const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+        if (commandCooldown && commandCooldown.command === 'report' && Date.now() < commandCooldown.endsAt) {
+          const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+          return interaction.reply({ content: i18next.t(`cooldown`, { timeLeft: timeLeft}), ephemeral: true });
+        }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
         await interaction.deferReply({ ephemeral: true });
         try {
@@ -85,13 +91,15 @@ module.exports = {
             } catch (error) {
                 return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), ephemeral: true });
             }
-
+            userCommandCooldowns.set(interaction.user.id, { command: 'report', endsAt: Date.now() + 30000 });
             // Отправка сообщения о завершении выполнения команды
             await interaction.editReply({ content: i18next.t(`report-js_user_log_moderator`, { reportmember: memberToReport.id, reason: reason }), ephemeral: true });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
             return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
         }
-
+        setTimeout(() => {
+            userCommandCooldowns.delete(interaction.user.id);
+          }, 30000);
     }
 };

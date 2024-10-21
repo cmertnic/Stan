@@ -1,4 +1,5 @@
 {
+    "cooldown": "该命令正在回滚。请等待 {{timeLeft}} 秒 后再再次调用该命令。",
     "error_id_or_tag": "- 请输入有效的用户 ID 或参考。",
     "error_private_messages": "该命令在私人消息中不起作用",
     "error_bot_member": "- 未找到机器人成员。",
@@ -121,6 +122,7 @@
     "help-js_Commands_for_moderators_page_name_11": "/mutelist",
     "help-js_Commands_for_moderators_page_name_12": "/warnlist",
     "help-js_Commands_for_moderators_page_name_13": "/test",
+    "help-js_Commands_for_moderators_page_name_14": "/language",
     "help-js_Commands_for_moderators_page_value_1": "如果消息早于 14 天，则清除 1 条消息，并删除旧消息之前的所有消息",
     "help-js_Commands_for_moderators_page_value_2": "向参与者发出警告并给出原因（默认最多3次警告，默认至少30分钟），例如：/warn @name 30m挑衅行为",
     "help-js_Commands_for_moderators_page_value_3": "删除成员最近的警告，例如：/deleteWarn @name",
@@ -134,6 +136,7 @@
     "help-js_Commands_for_moderators_page_value_11": "调出静音列表",
     "help-js_Commands_for_moderators_page_value_12": "调用警告列表",
     "help-js_Commands_for_moderators_page_value_13": "检查服务器所需的所有依赖项",
+    "help-js_Commands_for_moderators_page_value_14": "允许您更改服务器语言",
     "help-js_extra_page_title": "附加信息",
     "help-js_extra_page_name_1": "什么不能写？",
     "help-js_extra_page_name_2": "帮助命令运行时间",
@@ -317,7 +320,7 @@
     "language-js_language_hin": "Hin हिंदी",
     "language-js_language_jpn": "Jpn 日本語",
     "language-js_language_kor": "Kor 한국인",
-    "language-js_idioma_por": "Por português",
+    "language-js_language_por": "Por português",
     "language-js_language_rus": "Rus Русский",
     "language-js_language_spa": "Spa Español"
 }

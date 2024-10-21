@@ -12,18 +12,18 @@ const TIME_OPTION_NAME = t('warn-js_time');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('warn')
-        .setDescription(t('warn-js_description'))
+        .setDescription(i18next.t('warn-js_description'))
         .addUserOption(option => option
             .setName(USER_OPTION_NAME)
-            .setDescription(t('warn-js_user_description'))
+            .setDescription(i18next.t('warn-js_user_description'))
             .setRequired(true))
         .addStringOption(option => option
             .setName(REASON_OPTION_NAME)
-            .setDescription(t('warn-js_reason_description'))
+            .setDescription(i18next.t('warn-js_reason_description'))
             .setRequired(false))
         .addStringOption(option => option
             .setName(TIME_OPTION_NAME)
-            .setDescription(t('warn-js_time_description'))
+            .setDescription(i18next.t('warn-js_time_description'))
             .setRequired(false)),
     /**
          * @param {Client} robot - экземпляр Discord.js Client
@@ -65,26 +65,26 @@ module.exports = {
             }
 
             if (!interaction.member.permissions.has('ModerateMembers') || !interaction.guild) {
-                return interaction.editReply({ content: t('ModerateMembers_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
             }
 
             if (!interaction.guild.members.cache.get(robot.user.id).permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: t('ModerateMembers_bot_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
             }
 
             const userIdToWarn = interaction.options.getUser(USER_OPTION_NAME).id;
             if (!userIdToWarn) {
-                return interaction.editReply({ content: t('warn-js_error_user_id'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('warn-js_error_user_id'), ephemeral: true });
             }
 
             const memberToWarn = await interaction.guild.members.fetch(userIdToWarn).catch(console.error);
 
             if (interaction.member.roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                return interaction.editReply({ content: t('warn-js_hierarchy_bot'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('warn-js_hierarchy_bot'), ephemeral: true });
             }
 
             if (interaction.guild.members.cache.get(robot.user.id).roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                return interaction.editReply({ content: t('warn-js_hierarchy_user'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('warn-js_hierarchy_user'), ephemeral: true });
             }
 
             const inputDuration = interaction.options.getString(TIME_OPTION_NAME);
@@ -105,10 +105,10 @@ module.exports = {
                     embeds: [
                         new EmbedBuilder()
                             .setColor(0xFF0000)
-                            .setTitle(t('warn-js_max_warns_title'))
-                            .setDescription(t('warn-js_max_warns_desc', { userIdToWarn, maxWarnings }))
+                            .setTitle(i18next.t('warn-js_max_warns_title'))
+                            .setDescription(i18next.t('warn-js_max_warns_desc', { userIdToWarn, maxWarnings }))
                             .setTimestamp()
-                            .setFooter({ text: t('warn-js_max_warns_footer', { moderator: interaction.user.tag }) }),
+                            .setFooter({ text: i18next.t('warn-js_max_warns_footer', { moderator: interaction.user.tag }) }),
                     ],
                 });
                 return;
@@ -127,7 +127,7 @@ module.exports = {
                 console.error(`Ошибка при выполнении функции warn: ${error}`);
             }
 
-            await interaction.reply({ content: t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), ephemeral: true });
+            await interaction.reply({ content: i18next.t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), ephemeral: true });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
             return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });

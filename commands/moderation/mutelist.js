@@ -2,7 +2,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType,
 const { i18next, t } = require('../../i18n');
 const { getAllActiveMutes } = require('../../database/mutesDb');
 const { formatDuration } = require('../../events');
-
+const userCommandCooldowns = new Map();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('mutelist')
@@ -16,7 +16,11 @@ module.exports = {
   async execute(robot, interaction) {
     // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
     await interaction.deferReply({ ephemeral: true });
-
+    const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+    if (commandCooldown && commandCooldown.command === 'mutelist' && Date.now() < commandCooldown.endsAt) {
+      const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+    }
     try {
       // Проверка, что пользователь не бот
       if (interaction.user.bot) return;
@@ -112,6 +116,7 @@ module.exports = {
       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
 
       // Обработчик нажатия кнопок
+      userCommandCooldowns.set(interaction.user.id, { command: 'mutelist', endsAt: Date.now() + 300200 });
       collector.on('collect', async (i) => {
         if (i.deferred || i.replied) return;
         if (i.customId.startsWith('mutelist-page-')) {
@@ -125,5 +130,8 @@ module.exports = {
       console.error(`Произошла ошибка: ${error.message}`);
       return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
     }
+    setTimeout(() => {
+      userCommandCooldowns.delete(interaction.user.id);
+    }, 300200);
   },
 };

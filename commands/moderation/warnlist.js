@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { i18next, t } = require('../../i18n');
 const { getAllActiveWarnings } = require('../../database/warningsDb');
 const { formatDuration } = require('../../events');
-
+const userCommandCooldowns = new Map();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('warnlist')
@@ -14,6 +14,12 @@ module.exports = {
          * @param {CommandInteraction} interaction - объектInteraction от Discord.js
          */
     async execute(robot, interaction) {
+
+        const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+        if (commandCooldown && commandCooldown.command === 'warnlist' && Date.now() < commandCooldown.endsAt) {
+          const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+          return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+        }
         // Откладываем ответ на запрос, чтобы можно было отправить несколько сообщений
         await interaction.deferReply({ ephemeral: true });
         try {
@@ -108,7 +114,7 @@ module.exports = {
             // Создание сборщика компонентов для обработки нажатий на кнопки
             const filter = (i) => i.user.id === interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
-
+            userCommandCooldowns.set(interaction.user.id, { command: 'warnlist', endsAt: Date.now() + 300200 });
             collector.on('collect', async (i) => {
                 if (i.deferred || i.replied) return;
                 if (i.customId.startsWith('warnlist-page-')) {
@@ -122,5 +128,8 @@ module.exports = {
             console.error(`Произошла ошибка: ${error.message}`);
             return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
         }
+        setTimeout(() => {
+            userCommandCooldowns.delete(interaction.user.id);
+          }, 300200);
     },
 };

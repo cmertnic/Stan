@@ -1,4 +1,5 @@
 {
+  "cooldown": "Der Befehl befindet sich im Rollback. Bitte warten Sie {{timeLeft}} Sekunden, bevor Sie den Befehl erneut aufrufen.",
   "error_id_or_tag": "– Bitte geben Sie eine gültige Benutzer-ID oder Referenz ein.",
   "error_private_messages": "Dieser Befehl funktioniert nicht in privaten Nachrichten",
   "error_bot_member": "– Bot-Mitglied nicht gefunden.",
@@ -121,6 +122,7 @@
   "help-js_Commands_for_moderators_page_name_11": "/mutelist",
   "help-js_Commands_for_moderators_page_name_12": "/warnlist",
   "help-js_Commands_for_moderators_page_name_13": "/test",
+  "help-js_Commands_for_moderators_page_name_14": "/language",
   "help-js_Commands_for_moderators_page_value_1": "löscht 1 Nachricht, wenn die Nachricht älter als 14 Tage ist, löscht alle Nachrichten vor der alten Nachricht",
   "help-js_Commands_for_moderators_page_value_2": "gibt eine Warnung an den Teilnehmer mit einem Grund aus (standardmäßig bis zu 3 Warnungen, standardmäßig auch mindestens 30 Minuten), Beispiel: /warn @name 30m provokatives Verhalten",
   "help-js_Commands_for_moderators_page_value_3": "Löscht die letzte Warnung eines Mitglieds, Beispiel: /deleteWarn @name",
@@ -134,6 +136,7 @@
   "help-js_Commands_for_moderators_page_value_11": "ruft die stummgeschaltete Liste auf",
   "help-js_Commands_for_moderators_page_value_12": "ruft die Warnliste auf",
   "help-js_Commands_for_moderators_page_value_13": "überprüft alle für den Server erforderlichen Abhängigkeiten",
+  "help-js_Commands_for_moderators_page_value_14": "ermöglicht Ihnen, die Serversprache zu ändern",
   "help-js_extra_page_title": "Zusätzliche Informationen",
   "help-js_extra_page_name_1": "Was kannst du nicht schreiben?",
   "help-js_extra_page_name_2": "Laufzeit des Hilfebefehls",
@@ -318,7 +321,7 @@
   "language-js_language_hin": "Hin हिंदी",
   "language-js_language_jpn": "Jpn 日本語",
   "language-js_language_kor": "Kor 한국인",
-  "language-js_idioma_por": "Por português",
+  "language-js_language_por": "Por português",
   "language-js_language_rus": "Rus Русский",
   "language-js_language_spa": "Spa Español"
 }

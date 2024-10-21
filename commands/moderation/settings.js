@@ -3,7 +3,7 @@ const { ChannelType, SlashCommandBuilder, PermissionsBitField } = require('disco
 const { initializeDefaultServerSettings, getServerSettings } = require('../../database/settingsDb');
 const { i18next, t } = require('../../i18n');
 const { handleButtonInteraction, displaySettings } = require('../../events');
-
+const userCommandCooldowns = new Map();
 // Экспортируем объект команды
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,6 +11,11 @@ module.exports = {
         .setDescription(i18next.t('settings-js_description')),
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
+        const commandCooldown = userCommandCooldowns.get(interaction.user.id);
+        if (commandCooldown && commandCooldown.command === 'settings' && Date.now() < commandCooldown.endsAt) {
+          const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
+          return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+        }
         if (interaction.channel.type === ChannelType.DM) {
             interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
             return;
@@ -21,6 +26,7 @@ module.exports = {
             interaction.reply({ content: i18next.t('Admin_user_check'), ephemeral: true });
             return;
         }
+        userCommandCooldowns.set(interaction.user.id, { command: 'settings', endsAt: Date.now() + 300200 });
         try {
             // Получение настроек сервера или создание настроек по умолчанию, если их нет
             const config = await getServerSettings(guildId) || await initializeDefaultServerSettings(guildId);
@@ -43,5 +49,8 @@ module.exports = {
             console.error(`Произошла ошибка: ${error.message}`);
             return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
         }
+        setTimeout(() => {
+            userCommandCooldowns.delete(interaction.user.id);
+          }, 300200);
     }
 };

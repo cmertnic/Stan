@@ -1,4 +1,5 @@
 {
+    "cooldown": "O comando está em rollback. Aguarde {{timeLeft}} segundos antes de chamar o comando novamente.",
     "error_id_or_tag": "- Por favor insira um ID de usuário ou referência válido.",
     "error_private_messages": "Este comando não funciona em mensagens privadas",
     "error_bot_member": "- Membro do bot não encontrado.",
@@ -121,6 +122,7 @@
     "help-js_Commands_for_moderators_page_name_11": "/mutelist",
     "help-js_Commands_for_moderators_page_name_12": "/warnlist",
     "help-js_Commands_for_moderators_page_name_13": "/test",
+    "help-js_Commands_for_moderators_page_name_14": "/language",
     "help-js_Commands_for_moderators_page_value_1": "limpa 1 mensagem se a mensagem tiver mais de 14 dias, exclui todas as mensagens antes da mensagem antiga",
     "help-js_Commands_for_moderators_page_value_2": "dá um aviso ao participante com um motivo (até 3 avisos por padrão, também pelo menos 30 minutos por padrão), exemplo: /warn @name 30m comportamento provocativo",
     "help-js_Commands_for_moderators_page_value_3": "exclui o aviso mais recente de um membro, exemplo: /deleteWarn @name",
@@ -134,6 +136,7 @@
     "help-js_Commands_for_moderators_page_value_11": "abre a lista silenciada",
     "help-js_Commands_for_moderators_page_value_12": "acessa a lista de avisos",
     "help-js_Commands_for_moderators_page_value_13": "verifica todas as dependências necessárias para o servidor",
+    "help-js_Commands_for_moderators_page_value_14": "permite alterar o idioma do servidor",
     "help-js_extra_page_title": "Informações adicionais",
     "help-js_extra_page_name_1": "o que você não pode escrever?",
     "help-js_extra_page_name_2": "tempo de execução do comando de ajuda",
@@ -318,7 +321,7 @@
     "language-js_language_hin": "Hin हिंदी",
     "language-js_language_jpn": "Jpn 日本語",
     "language-js_language_kor": "Kor 한국인",
-    "language-js_idioma_por": "Por português",
+    "language-js_language_por": "Por português",
     "language-js_language_rus": "Rus Русский",
     "language-js_language_spa": "Spa Español"
 }

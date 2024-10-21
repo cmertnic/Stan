@@ -1,4 +1,5 @@
 {
+    "cooldown": "La commande est en restauration. Veuillez patienter {{timeLeft}} secondes avant d'appeler à nouveau la commande.",
     "error_id_or_tag": "- Veuillez saisir un identifiant ou une référence utilisateur valide.",
     "error_private_messages": "Cette commande ne fonctionne pas dans les messages privés",
     "error_bot_member": "- Membre du bot introuvable.",
@@ -121,6 +122,7 @@
     "help-js_Commands_for_moderators_page_name_11": "/mutelist",
     "help-js_Commands_for_moderators_page_name_12": "/warnlist",
     "help-js_Commands_for_moderators_page_name_13": "/test",
+    "help-js_Commands_for_moderators_page_name_14": "/language",
     "help-js_Commands_for_moderators_page_value_1": "efface 1 message si le message date de plus de 14 jours, supprime tous les messages avant l'ancien message",
     "help-js_Commands_for_moderators_page_value_2": "donne un avertissement au participant avec une raison (jusqu'à 3 avertissements par défaut, également au moins 30 minutes par défaut), exemple : /warn @name 30m comportement provocateur",
     "help-js_Commands_for_moderators_page_value_3": "supprime l'avertissement le plus récent d'un membre, exemple : /deleteWarn @name",
@@ -134,6 +136,7 @@
     "help-js_Commands_for_moderators_page_value_11": "fait apparaître la liste muette",
     "help-js_Commands_for_moderators_page_value_12": "appelle la liste d'avertissements",
     "help-js_Commands_for_moderators_page_value_13": "vérifie toutes les dépendances nécessaires au serveur",
+    "help-js_Commands_for_moderators_page_value_14": "vous permet de changer la langue du serveur",
     "help-js_extra_page_title": "Informations supplémentaires",
     "help-js_extra_page_name_1": "qu'est-ce que tu ne peux pas écrire ?",
     "help-js_extra_page_name_2": "durée d'exécution de la commande d'aide",
@@ -318,7 +321,7 @@
     "language-js_language_hin": "Hin हिंदी",
     "language-js_language_jpn": "Jpn 日本語",
     "language-js_language_kor": "Kor 한국인",
-    "language-js_idioma_por": "Por português",
+    "language-js_language_por": "Por português",
     "language-js_language_rus": "Rus Русский",
     "language-js_language_spa": "Spa Español"
 }
