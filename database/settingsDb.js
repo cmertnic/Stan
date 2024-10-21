@@ -141,8 +141,8 @@ async function initializeDefaultServerSettings(guildId) {
         language: process.env.LANGUAGE || 'eng',
         automod: process.env.AUTOMOD === '0' ? false : true,
         NotAutomodChannels: process.env.NOTAUTOMODCHANNELS || 'stan_logs, clear_stan_log',
-        automodBlacklist: process.env.AUTOMODBLACKLIST || '0'? false : true,
-        automodBadLinks: process.env.AUTOMODBADLINKS || '0'? false : true,
+        automodBlacklist: process.env.AUTOMODBLACKLIST || 'fuck',
+        automodBadLinks: process.env.AUTOMODBADLINKS || 'azino777cashcazino-slots.ru',
         uniteautomodblacklists: process.env.UNITE_AUTOMODBLACKLISTS || '0'? false : true,
         uniteAutomodBadLinks: process.env.UNITE_AUTOMODBADLINKS || '0'? false : true,
       };
