@@ -11,14 +11,13 @@ module.exports = {
         .setDescription(i18next.t('settings-js_description')),
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
+        if (interaction.channel.type === ChannelType.DM) {
+            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+          }
         const commandCooldown = userCommandCooldowns.get(interaction.user.id);
         if (commandCooldown && commandCooldown.command === 'settings' && Date.now() < commandCooldown.endsAt) {
           const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
           return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
-        }
-        if (interaction.channel.type === ChannelType.DM) {
-            interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
-            return;
         }
         const guildId = interaction.guild.id;
         // Проверка прав администратора у пользователя, вызвавшего команду

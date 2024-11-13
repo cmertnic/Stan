@@ -18,7 +18,7 @@ module.exports = {
     try {
       if (interaction.user.bot) return;
       if (interaction.channel.type === ChannelType.DM) {
-        return interaction.editReply({ content: i18next.t('error_private_messages'), ephemeral: true });
+        return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
       }
 
       // количество пользователей на одной странице и текущую страницу

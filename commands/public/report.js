@@ -1,7 +1,7 @@
 // Подключаем необходимые модули
 const { createLogChannel } = require('../../events');
 const { getServerSettings } = require('../../database/settingsDb');
-const {Client ,ChannelType, SlashCommandBuilder } = require('discord.js');
+const {Client ,ChannelType, EmbedBuilder,SlashCommandBuilder } = require('discord.js');
 const { i18next, t } = require('../../i18n');
 const USER_OPTION_NAME = i18next.t('report-js_user');
 const REASON_OPTION_NAME = i18next.t('report-js_reason');
@@ -28,6 +28,9 @@ module.exports = {
      */
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
+        if (interaction.channel.type === ChannelType.DM) {
+            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+          }
         const commandCooldown = userCommandCooldowns.get(interaction.user.id);
         if (commandCooldown && commandCooldown.command === 'report' && Date.now() < commandCooldown.endsAt) {
           const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
@@ -36,13 +39,6 @@ module.exports = {
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
         await interaction.deferReply({ ephemeral: true });
         try {
-            // Проверка, что пользователь не бот
-            if (interaction.user.bot) return;
-
-            // Проверка, что команда не была вызвана в личных сообщениях
-            if (interaction.channel.type === ChannelType.DM) {
-                return interaction.editReply(i18next.t('error_private_messages'));
-            }
 
             // Получение настроек сервера
             const serverSettings = await getServerSettings(interaction.guild.id);
@@ -87,13 +83,21 @@ module.exports = {
 
             // Отправка сообщения в канал логирования
             try {
-                await logChannel.send(i18next.t(`report-js_user_log_channel`, { userTag: interaction.user.id, reportmember: memberToReport.id, reason: reason }));
+                const EmbedReportUser = new EmbedBuilder()
+                .setColor(0xFFFF00) // Жёлтый цвет для сообщения о жалобе
+                .setTitle(i18next.t('report-js_description'))
+                .setDescription(i18next.t('report-js_user_log_channel', { reportmember: memberToReport.id, userTag: interaction.user.id, reason: reason }))
+                .setTimestamp()
+            
+            await logChannel.send({ embeds: [EmbedReportUser] });
             } catch (error) {
                 return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), ephemeral: true });
             }
             userCommandCooldowns.set(interaction.user.id, { command: 'report', endsAt: Date.now() + 30000 });
             // Отправка сообщения о завершении выполнения команды
-            await interaction.editReply({ content: i18next.t(`report-js_user_log_moderator`, { reportmember: memberToReport.id, reason: reason }), ephemeral: true });
+            await interaction.editReply({
+                content: i18next.t(`report-js_user_log_moderator`, { reportmember: memberToReport.id, reason: reason }), ephemeral: true 
+            });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
             return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });

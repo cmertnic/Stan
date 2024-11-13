@@ -35,8 +35,8 @@ module.exports = {
             // Предварительные проверки
             if (interaction.user.bot) return;
             if (interaction.channel.type === ChannelType.DM) {
-                return interaction.editReply(i18next.t('error_private_messages'));
-            }
+                return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+              }
             if (!interaction.member.permissions.has('ModerateMembers')) {
                 return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
             }

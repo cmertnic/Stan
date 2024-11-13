@@ -22,15 +22,16 @@ module.exports = {
      * @param {Client} robot - экземпляр клиента Discord.js
      * @param {CommandInteraction} interaction - объект взаимодействия с пользователем
      */
-    async execute(robot, interaction) {
+    async execute(robot, interaction) { 
+        if (interaction.user.bot) return;
+        if (interaction.channel.type === ChannelType.DM) {
+            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+          }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
         await interaction.deferReply({ ephemeral: true });
         const guild = interaction.guild;
         // Предварительные проверки
-        if (interaction.user.bot) return;
-        if (interaction.channel.type === ChannelType.DM) {
-            return interaction.editReply(i18next.t('error_private_messages'));
-        }
+
         // Проверка прав пользователя
         const member = interaction.member;
         if (member && !member.permissions.has('ModerateMembers')) {

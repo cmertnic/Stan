@@ -1,7 +1,8 @@
 // Импорт необходимых модулей и функций
 const { Client, ChannelType, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const schedule = require('node-schedule');
-const { getServerSettings, createLogChannel } = require('../../database/settingsDb');
+const { createLogChannel } = require('../../events');
+const { getServerSettings } = require('../../database/settingsDb');
 const { saveWarningToDatabase, removeWarningFromDatabase, getWarningsCount } = require('../../database/warningsDb');
 const { formatDuration, convertToMilliseconds, notifyUserAndLogWarn } = require('../../events');
 const { i18next, t } = require('../../i18n');
@@ -27,11 +28,17 @@ module.exports = {
             .setRequired(false)),
     /**
          * @param {Client} robot - экземпляр Discord.js Client
-         * @param {CommandInteraction} interaction - объектInteraction от Discord.js
+         * @param {CommandInteraction} interaction - объект Interaction от Discord.js
          */
     async execute(robot, interaction, database) {
+        if (interaction.user.bot) return;
+        if (interaction.channel.type === ChannelType.DM) {
+            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+          }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
         await interaction.deferReply({ ephemeral: true });
+        let hasReplied = false; // Флаг для отслеживания, был ли отправлен ответ
+
         try {
             if (interaction.user.bot || interaction.channel.type === ChannelType.DM) return;
 
@@ -58,33 +65,45 @@ module.exports = {
                 const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    await interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    hasReplied = true; // Устанавливаем флаг, что ответ был отправлен
+                    return;
                 }
 
                 logChannel = interaction.guild.channels.cache.find(ch => ch.name === channelNameToCreate);
             }
 
             if (!interaction.member.permissions.has('ModerateMembers') || !interaction.guild) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
             if (!interaction.guild.members.cache.get(robot.user.id).permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
-            const userIdToWarn = interaction.options.getUser(USER_OPTION_NAME).id;
+            const userIdToWarn = interaction.options.getUser (USER_OPTION_NAME).id;
             if (!userIdToWarn) {
-                return interaction.editReply({ content: i18next.t('warn-js_error_user_id'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_error_user_id'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
             const memberToWarn = await interaction.guild.members.fetch(userIdToWarn).catch(console.error);
 
             if (interaction.member.roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                return interaction.editReply({ content: i18next.t('warn-js_hierarchy_bot'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_bot'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
             if (interaction.guild.members.cache.get(robot.user.id).roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                return interaction.editReply({ content: i18next.t('warn-js_hierarchy_user'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_user'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
             const inputDuration = interaction.options.getString(TIME_OPTION_NAME);
@@ -95,12 +114,15 @@ module.exports = {
 
             const formattedDuration = formatDuration(duration);
             if (!formattedDuration) {
-                return interaction.editReply({ content: t('warn-js_error_inkorect_duration'), ephemeral: true });
+                await interaction.editReply({ content: t('warn-js_error_inkorect_duration'), ephemeral: true });
+                hasReplied = true;
+                return;
             }
 
             const warningsCount = await getWarningsCount(userIdToWarn);
             if (warningsCount >= maxWarnings) {
                 await interaction.editReply({ content: t(`warn-js_max_warns`, { userIdToWarn, maxWarnings }), ephemeral: true });
+                hasReplied = true;
                 await logChannel.send({
                     embeds: [
                         new EmbedBuilder()
@@ -114,24 +136,22 @@ module.exports = {
                 return;
             }
 
-            try {
-                const warningId = await saveWarningToDatabase(interaction, userIdToWarn, duration, reason);
-                await notifyUserAndLogWarn(interaction, memberToWarn, formattedDuration, reason);
+            const warningId = await saveWarningToDatabase(interaction, userIdToWarn, duration, reason);
+            await notifyUserAndLogWarn(interaction, memberToWarn, formattedDuration, reason);
 
-                const removalDate = new Date(Date.now() + duration);
-                schedule.scheduleJob(removalDate, async () => {
-                    await removeWarningFromDatabase(database, warningId)
-                        .catch(error => console.error(`Ошибка при удалении предупреждения: ${error}`));
-                });
-            } catch (error) {
-                console.error(`Ошибка при выполнении функции warn: ${error}`);
-            }
+            const removalDate = new Date(Date.now() + duration);
+            schedule.scheduleJob(removalDate, async () => {
+                await removeWarningFromDatabase(database, warningId)
+                    .catch(error => console.error(`Ошибка при удалении предупреждения: ${error}`));
+            });
 
-            await interaction.reply({ content: i18next.t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), ephemeral: true });
+            hasReplied = true; // Устанавливаем флаг, что ответ был отправлен
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            if (!hasReplied) {
+                await interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            }
         }
-
     },
 };

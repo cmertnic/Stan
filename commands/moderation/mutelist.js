@@ -14,6 +14,10 @@ module.exports = {
    * @param {import("discord.js").CommandInteraction} interaction - объект взаимодействия с ботом
    */
   async execute(robot, interaction) {
+    if (interaction.user.bot) return;
+    if (interaction.channel.type === ChannelType.DM) {
+      return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+    }
     // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
     await interaction.deferReply({ ephemeral: true });
     const commandCooldown = userCommandCooldowns.get(interaction.user.id);
@@ -22,13 +26,6 @@ module.exports = {
       return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
     }
     try {
-      // Проверка, что пользователь не бот
-      if (interaction.user.bot) return;
-
-      // Проверка, что команда не используется в личных сообщениях
-      if (interaction.channel.type === ChannelType.DM) {
-        return interaction.editReply({ content: i18next.t('error_private_messages'), ephemeral: true });
-      }
 
       const { member, guild } = interaction;
 

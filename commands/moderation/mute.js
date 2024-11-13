@@ -36,14 +36,15 @@ module.exports = {
 * @param {CommandInteraction} interaction - объект взаимодействия с пользователем
 */
     async execute(robot, interaction) {
+        if (interaction.user.bot) return;
+        if (interaction.channel.type === ChannelType.DM) {
+            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+          }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
         await interaction.deferReply({ ephemeral: true });
         try {
             // Проверки и инициализация переменных
-            if (interaction.user.bot) return;
-            if (interaction.channel.type === ChannelType.DM) {
-                return interaction.editReply(i18next.t('error_private_messages'));
-            }
+
 
             const serverSettings = await getServerSettings(interaction.guild.id);
             const mutedRoleName = serverSettings.mutedRoleName;

@@ -12,12 +12,11 @@ module.exports = {
 
 
   async execute(robot, interaction) {
-    if (interaction.user.bot) return; // Если пользователь бот, прерываем исполнение команды
-
+    if (interaction.user.bot) return;
     if (interaction.channel.type === ChannelType.DM) {
-      interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
-      return; // Если сообщение отправлено в личные сообщения, отвечаем ошибкой и прерываем исполнение
+      return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
     }
+    if (interaction.user.bot) return; // Если пользователь бот, прерываем исполнение команды
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       interaction.reply({ content: i18next.t('Admin_user_check'), ephemeral: true });
