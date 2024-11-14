@@ -2,7 +2,7 @@
 require('dotenv').config();
 
 // Импортируем необходимые модули
-const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuilder} = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const cron = require('node-cron');
 const { initializeDefaultServerSettings, getServerSettings, } = require('./database/settingsDb');
@@ -10,7 +10,7 @@ const { getAllMemberIds, updateMembersInfo } = require('./database/membersDb');
 const { removeExpiredWarnings } = require('./database/warningsDb');
 const { removeExpiredMutes } = require('./database/mutesDb');
 const { initializeI18next, i18next, t } = require('./i18n');
-const { createLogChannel,createRoles } = require('./events');
+const { createLogChannel, createRoles } = require('./events');
 // Инициализируем массивы для хранения черного списка и плохих ссылок
 let blacklist = [];
 let bad_links = [];
@@ -114,30 +114,48 @@ const rest = new REST().setToken(process.env.TOKEN);
     });
     // Событие при добавлении нового участника на сервер
     robot.on('guildMemberAdd', async (member) => {
-      if (message.author.bot) return;
       try {
-        const serverSettings = await getServerSettings(interaction.guild.id);
+        const serverSettings = await getServerSettings(member.guild.id); 
         const { newMemberRoleName } = serverSettings;
+
         // Получаем роль "Новичок"
         const role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
 
         if (role) {
           // Выдаем роль пользователю
           await member.roles.add(role);
+          console.log(`Роль "${newMemberRoleName}" выдана пользователю ${member.user.tag}`);
         } else {
-          async function ensureRolesExist(interaction) {
-            const rolesToCreate = [newMemberRoleName];
-            const rolesCreationMessages = await createRoles(interaction, rolesToCreate);
-          }
-          const roleCreationMessages = await ensureRolesExist(interaction);
+          // Если роль не найдена, создаем ее
+          const roleCreationMessages = await ensureRolesExist(member.guild, newMemberRoleName);
           if (roleCreationMessages) {
-            console.log(roleCreationMessages); // Логирование сообщений о создании ролей
+            console.log(roleCreationMessages); 
           }
         }
       } catch (error) {
-        console.error(`Ошибка при выдаче роли "Новичок": ${error.message}`);
+        console.error(`Ошибка при выдаче роли "${newMemberRoleName}": ${error.message}`);
       }
     });
+
+    // Функция для создания ролей
+    async function ensureRolesExist(guild, roleName) {
+      try {
+        const existingRole = guild.roles.cache.find(role => role.name === roleName);
+        if (!existingRole) {
+          // Создаем роль
+          const newRole = await guild.roles.create({
+            name: roleName,
+            color: 'BLUE', // Вы можете изменить цвет роли
+            reason: 'Создание роли для новых участников'
+          });
+          return `Роль "${newRole.name}" была создана.`;
+        }
+        return null; // Роль уже существует
+      } catch (error) {
+        console.error(`Ошибка при создании роли: ${error.message}`);
+        return null;
+      }
+    }
     robot.on('ready', async () => {
       console.log(`${robot.user.username} готов вкалывать`);
       const guilds = robot.guilds.cache;
