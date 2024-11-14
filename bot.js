@@ -2,7 +2,7 @@
 require('dotenv').config();
 
 // Импортируем необходимые модули
-const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuilder, } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuilder} = require('discord.js');
 const fs = require('fs');
 const cron = require('node-cron');
 const { initializeDefaultServerSettings, getServerSettings, } = require('./database/settingsDb');
@@ -10,7 +10,7 @@ const { getAllMemberIds, updateMembersInfo } = require('./database/membersDb');
 const { removeExpiredWarnings } = require('./database/warningsDb');
 const { removeExpiredMutes } = require('./database/mutesDb');
 const { initializeI18next, i18next, t } = require('./i18n');
-const { createLogChannel } = require('./events');
+const { createLogChannel,createRoles } = require('./events');
 // Инициализируем массивы для хранения черного списка и плохих ссылок
 let blacklist = [];
 let bad_links = [];
@@ -112,7 +112,32 @@ const rest = new REST().setToken(process.env.TOKEN);
       guildsData.set(guild.id, defaultSettings);
       console.log(`Данные гильдии инициализированы для ID: ${guild.id}`);
     });
+    // Событие при добавлении нового участника на сервер
+    robot.on('guildMemberAdd', async (member) => {
+      if (message.author.bot) return;
+      try {
+        const serverSettings = await getServerSettings(interaction.guild.id);
+        const { newMemberRoleName } = serverSettings;
+        // Получаем роль "Новичок"
+        const role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
 
+        if (role) {
+          // Выдаем роль пользователю
+          await member.roles.add(role);
+        } else {
+          async function ensureRolesExist(interaction) {
+            const rolesToCreate = [newMemberRoleName];
+            const rolesCreationMessages = await createRoles(interaction, rolesToCreate);
+          }
+          const roleCreationMessages = await ensureRolesExist(interaction);
+          if (roleCreationMessages) {
+            console.log(roleCreationMessages); // Логирование сообщений о создании ролей
+          }
+        }
+      } catch (error) {
+        console.error(`Ошибка при выдаче роли "Новичок": ${error.message}`);
+      }
+    });
     robot.on('ready', async () => {
       console.log(`${robot.user.username} готов вкалывать`);
       const guilds = robot.guilds.cache;
@@ -307,6 +332,6 @@ const rest = new REST().setToken(process.env.TOKEN);
           console.log('Бот успешно перезапущен.');
         }
       });
-    }, 2000); // Ждем 2 секунды перед перезапуском бота, чтобы избежать бесконечного цикла
+    }, 3000); // Ждем 3 секунды перед перезапуском бота, чтобы избежать бесконечного цикла
   }
 })();

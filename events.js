@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const validLanguages = ['ben', 'chi', 'eng', 'fra', 'ger', 'hin', 'jpn', 'kor', 'por', 'rus', 'spa'];
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits, EmbedBuilder, StringSelectMenuBuilder } = require('discord.js');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
@@ -202,7 +202,7 @@ async function sendPartAndDelete(context, part) {
 }
 // Функция для создания главного канала лоигрования
 async function createMainLogChannel(interaction, channelName, botMember, higherRoles, serverSettings) {
-    const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles, serverSettings);
+    const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles);
     if (result) {
         if (result.created) {
             serverSettings.logChannelName = result.channel.name;
@@ -215,8 +215,9 @@ async function createMainLogChannel(interaction, channelName, botMember, higherR
         return i18next.t('events-js_mainLogChannel_error');
     }
 }
-// Функция для получения данных и приссвоения правил для каналов лоигрования
-async function getOrCreateLogChannel(guild, channelName, botMember, higherRoles, serverSettings) {
+
+// Функция получения или создания лог-канала
+async function getOrCreateLogChannel(guild, channelName, botMember, higherRoles) {
     const message = i18next.t('events-js_logChannel_reason');
     let fetchedChannels = await guild.channels.fetch();
     const existingChannel = fetchedChannels.find(c => c.name === channelName && c.type === ChannelType.GuildText);
@@ -240,10 +241,6 @@ async function getOrCreateLogChannel(guild, channelName, botMember, higherRoles,
                         id: botMember.id,
                         allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
                     },
-                    {
-                        id: serverSettings.moderatorRoleId,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-                    },
                     ...moderators.map(member => ({
                         id: member.id,
                         allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
@@ -259,13 +256,14 @@ async function getOrCreateLogChannel(guild, channelName, botMember, higherRoles,
             return { channel, created: true };
         } catch (error) {
             console.error(`Ошибка при создании канала: ${error}`);
-            return { error: i18next.t('events-js_logChannel_error', { channelName }) };
+            return null; // Возвращаем null в случае ошибки
         }
     }
 }
-// Функция для создания побочных каналов лоигрования
-async function createLogChannel(interaction, channelName, botMember, higherRoles, serverSettings) {
-    const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles, serverSettings);
+
+// Функция для создания побочных каналов логирования
+async function createLogChannel(interaction, channelName, botMember, higherRoles) {
+    const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles);
     if (result) {
         if (result.created) {
             return i18next.t('events-js_logChannel_create', { channelName: channelName, createdChannelName: result.channel.name });
@@ -414,6 +412,8 @@ async function validateSettingValue(settingKey, value, interaction, guildId) {
     let isValid = true;
     let errorMessage = '';
 
+    // Получаем название настройки для проверки
+    const settingName = i18next.t(`settings-js_buttons_name_${settingKey}`); // Предполагается, что названия настроек хранятся в i18next
     // Валидация значения настройки в зависимости от ключа настройки
     switch (settingKey) {
         // Валидация для строковых значений
@@ -428,31 +428,35 @@ async function validateSettingValue(settingKey, value, interaction, guildId) {
         case 'NotAutomodChannels':
         case 'automodBlacklist':
         case 'automodBadLinks':
+        case 'manRoleName':
+        case 'girlRoleName':
+        case 'newMemberRoleName':
+
             if (typeof value !== 'string' || value.length === 0) {
                 isValid = false;
-                errorMessage = (i18next.t(`settings-js_logchannel_error`, { settingKey: settingKey }));
+                errorMessage = i18next.t(`settings-js_logchannel_error`, { settingKey });
+            } else if (value === settingName) {
+                isValid = false;
+                errorMessage = i18next.t(`settings-js_value_same_as_setting_name`, { settingKey }); // Сообщение об ошибке
             }
             break;
-
         // Валидация для duration
         case 'muteDuration':
         case 'warningDuration':
             const durationPattern = /^(\d+d)?\s*(\d+h)?\s*(\d+m)?$/;
             if (!durationPattern.test(value)) {
                 isValid = false;
-                errorMessage = (i18next.t(`settings-js_duration_error`, { settingKey: settingKey }));
+                errorMessage = i18next.t(`settings-js_duration_error`, { settingKey });
             }
             break;
-
         // Валидация для maxWarnings
         case 'maxWarnings':
             const numberValue = parseInt(value);
             if (isNaN(numberValue) || numberValue <= 0) {
                 isValid = false;
-                errorMessage = (i18next.t(`settings-js_maxWarnings_err`, { settingKey: settingKey }));
+                errorMessage = i18next.t(`settings-js_maxWarnings_err`, { settingKey });
             }
             break;
-
         // Валидация для boolean значений
         case 'muteNotice':
         case 'warningsNotice':
@@ -467,18 +471,17 @@ async function validateSettingValue(settingKey, value, interaction, guildId) {
         case 'automod':
         case 'uniteautomodblacklists':
         case 'uniteAutomodBadLinks':
-            if (value !== 'true' && value !== 'false') {
+            if (value !== '1' && value !== '0') {
                 isValid = false;
-                errorMessage = (i18next.t(`settings-js_trueFalse_err`, { settingKey: settingKey }));
+                errorMessage = i18next.t(`settings-js_trueFalse_err`, { settingKey });
             } else {
-                // Преобразуем 'true' и 'false' в 1 и 0
-                value = value === 'true' ? 1 : 0;
+                // Преобразуем '1' и '0' в true и false
+                value = value === '1';
             }
             break;
-
         default:
             isValid = false;
-            errorMessage = (i18next.t(`settings-js_unknown_param_err`, { settingKey: settingKey }));
+            errorMessage = i18next.t(`settings-js_unknown_param_err`, { settingKey });
             break;
     }
 
@@ -495,101 +498,135 @@ async function handleButtonInteraction(interaction, config, page) {
 
     try {
         await interaction.deferUpdate();
-
         const guildId = interaction.guild.id;
         const settingKey = interaction.customId;
 
-        // задержка в 0.1 секунду чтобы бот успевал за пользователем
+        // Задержка в 0.1 секунду, чтобы бот успевал за пользователем
         await new Promise(resolve => setTimeout(resolve, 100));
 
+        // Обработка навигации по страницам
         if (['previousPage', 'nextPage'].includes(settingKey)) {
             const newPage = settingKey === 'previousPage' ? page - 1 : page + 1;
             await displaySettings(interaction, config, newPage);
             return;
         }
 
-        let settingValue;
-        do {
-            settingValue = await promptUserForSettingValue(interaction, settingKey);
+        // Проверяем, является ли настройка булевой (в виде 0 или 1)
+        const booleanSettings = [
+            'muteNotice',
+            'warningsNotice',
+            'deletingMessagesFromBannedUsers',
+            'clearNotice',
+            'muteLogChannelNameUse',
+            'warningLogChannelNameUse',
+            'banLogChannelNameUse',
+            'clearLogChannelNameUse',
+            'kickLogChannelNameUse',
+            'reportLogChannelNameUse',
+            'automod',
+            'uniteautomodblacklists',
+            'uniteAutomodBadLinks'
+        ];
 
-            if (settingValue === null) {
-                return;
-            }
+        if (booleanSettings.includes(settingKey)) {
+            // Переключаем значение между 0 и 1
+            config[settingKey] = config[settingKey] === 1 ? 0 : 1;
+            await saveServerSettings(guildId, config);
 
-            const { isValid, value } = await validateSettingValue(settingKey, settingValue, interaction, guildId);
+            const successMessage = i18next.t(`settings-js_sucess_update`, { settingKey });
+            await interaction.followUp({ content: successMessage, ephemeral: true });
 
-            if (!isValid) {
-                await interaction.followUp({ content: i18next.t(`settings-js_not_coreccct_value`, { settingKey: settingKey }), ephemeral: true });
-                continue;
-            }
+            // Обновляем основное меню настроек
+            await displaySettings(interaction, config, page);
+            return;
+        }
 
-            if (config[settingKey] === value) {
-                await interaction.followUp({ content: i18next.t(`settings-js_same_values`, { settingKey: settingKey }), ephemeral: true });
-            } else {
-                config[settingKey] = value;
-                await saveServerSettings(guildId, config);
+        // Здесь можно добавить логику для других типов настроек, если необходимо
 
-                if (settingKey === 'language') {
-                    updateI18nextLanguage(guildId, value);
-                }
-
-                await interaction.followUp({ content: i18next.t(`settings-js_sucess_update`, { settingKey: settingKey }), ephemeral: true });
-                break;
-            }
-        } while (true);
-
-        await displaySettings(interaction, config, page);
     } catch (error) {
         console.error('Ошибка при обработке кнопки:', error);
         if (!interaction.replied) {
-            await interaction.reply({ content: 'Error', ephemeral: true });
+            await interaction.followUp({ content: 'Произошла ошибка. Пожалуйста, попробуйте позже.', ephemeral: true });
         }
     }
+}
+async function createRoles(interaction, roleNames) {
+    const messages = [];
+
+    // Функция для генерации случайного цвета в шестнадцатеричном формате
+    function getRandomColor() {
+        const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+        return `#${randomColor.padStart(6, '0')}`; // Добавляет нули в начале, если необходимо
+    }
+
+    for (const roleName of roleNames) {
+        let role = interaction.guild.roles.cache.find(r => r.name === roleName);
+        if (!role) {
+            try {
+                const color = getRandomColor(); // Генерируем случайный цвет
+                role = await interaction.guild.roles.create({
+                    name: roleName,
+                    color: color,
+                    permissions: []
+                });
+            } catch (error) {
+                console.error(i18next.t('events-js_mutedRole_error'), { roleName });
+                messages.push(i18next.t('events-js_mutedRole_error'), { roleName });
+            }
+        } else {
+            messages.push(i18next.t('events-js_mutedRole_exists'), { roleName });
+        }
+    }
+
+    return messages.join('\n');
 }
 // Функция для отображения меню настроек
 async function displaySettings(interaction, config, page = 1) {
     const itemsPerPage = 5;
     const start = (page - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-
     const settingsEmbed = new EmbedBuilder()
         .setColor(0xFFD700)
         .setTitle(i18next.t('settings-js_pages_title'))
         .setDescription(i18next.t('settings-js_pages_description'))
         .setFooter({ text: i18next.t(`settings-js_pages_number`, { page }) });
-
     const settings = [
         { key: 'muteLogChannelName', name: i18next.t('settings-js_buttons_name_1'), value: config.muteLogChannelName },
-        { key: 'muteLogChannelNameUse', name: i18next.t('settings-js_buttons_name_2'), value: String(config.muteLogChannelNameUse) },
+        { key: 'muteLogChannelNameUse', name: i18next.t('settings-js_buttons_name_2'), value: config.muteLogChannelNameUse === 1 ? '✅' : '❌' },
         { key: 'mutedRoleName', name: i18next.t('settings-js_buttons_name_3'), value: config.mutedRoleName },
         { key: 'muteDuration', name: i18next.t('settings-js_buttons_name_4'), value: String(config.muteDuration) },
-        { key: 'muteNotice', name: i18next.t('settings-js_buttons_name_5'), value: String(config.muteNotice) },
+        { key: 'muteNotice', name: i18next.t('settings-js_buttons_name_5'), value: config.muteNotice === 1 ? '✅' : '❌' },
         { key: 'warningLogChannelName', name: i18next.t('settings-js_buttons_name_6'), value: config.warningLogChannelName },
-        { key: 'warningLogChannelNameUse', name: i18next.t('settings-js_buttons_name_7'), value: String(config.warningLogChannelNameUse) },
+        { key: 'warningLogChannelNameUse', name: i18next.t('settings-js_buttons_name_7'), value: config.warningLogChannelNameUse === 1 ? '✅' : '❌' },
         { key: 'warningDuration', name: i18next.t('settings-js_buttons_name_8'), value: String(config.warningDuration) },
         { key: 'maxWarnings', name: i18next.t('settings-js_buttons_name_9'), value: String(config.maxWarnings) },
-        { key: 'warningsNotice', name: i18next.t('settings-js_buttons_name_10'), value: String(config.warningsNotice) },
+        { key: 'warningsNotice', name: i18next.t('settings-js_buttons_name_10'), value: config.warningsNotice === 1 ? '✅' : '❌' },
         { key: 'banLogChannelName', name: i18next.t('settings-js_buttons_name_11'), value: config.banLogChannelName },
-        { key: 'banLogChannelNameUse', name: i18next.t('settings-js_buttons_name_12'), value: String(config.banLogChannelNameUse) },
-        { key: 'deletingMessagesFromBannedUsers', name: i18next.t('settings-js_buttons_name_13'), value: String(config.deletingMessagesFromBannedUsers) },
+        { key: 'banLogChannelNameUse', name: i18next.t('settings-js_buttons_name_12'), value: config.banLogChannelNameUse === 1 ? '✅' : '❌' },
+        { key: 'deletingMessagesFromBannedUsers', name: i18next.t('settings-js_buttons_name_13'), value: config.deletingMessagesFromBannedUsers === 1 ? '✅' : '❌' },
         { key: 'kickLogChannelName', name: i18next.t('settings-js_buttons_name_14'), value: config.kickLogChannelName },
-        { key: 'kickLogChannelNameUse', name: i18next.t('settings-js_buttons_name_15'), value: String(config.kickLogChannelNameUse) },
+        { key: 'kickLogChannelNameUse', name: i18next.t('settings-js_buttons_name_15'), value: config.kickLogChannelNameUse === 1 ? '✅' : '❌' },
         { key: 'reportLogChannelName', name: i18next.t('settings-js_buttons_name_16'), value: config.reportLogChannelName },
-        { key: 'reportLogChannelNameUse', name: i18next.t('settings-js_buttons_name_17'), value: String(config.reportLogChannelNameUse) },
+        { key: 'reportLogChannelNameUse', name: i18next.t('settings-js_buttons_name_17'), value: config.reportLogChannelNameUse === 1 ? '✅' : '❌' },
         { key: 'clearLogChannelName', name: i18next.t('settings-js_buttons_name_18'), value: config.clearLogChannelName },
-        { key: 'clearLogChannelNameUse', name: i18next.t('settings-js_buttons_name_19'), value: String(config.clearLogChannelNameUse) },
-        { key: 'clearNotice', name: i18next.t('settings-js_buttons_name_20'), value: String(config.clearNotice) },
+        { key: 'clearLogChannelNameUse', name: i18next.t('settings-js_buttons_name_19'), value: config.clearLogChannelNameUse === 1 ? '✅' : '❌' },
+        { key: 'clearNotice', name: i18next.t('settings-js_buttons_name_20'), value: config.clearNotice === 1 ? '✅' : '❌' },
         { key: 'logChannelName', name: i18next.t('settings-js_buttons_name_21'), value: config.logChannelName },
-        { key: 'automod', name: i18next.t('settings-js_buttons_name_23'), value: String(config.automod) },
+        { key: 'automod', name: i18next.t('settings-js_buttons_name_23'), value: config.automod === 1 ? '✅' : '❌' },
         { key: 'NotAutomodChannels', name: i18next.t('settings-js_buttons_name_24'), value: String(config.NotAutomodChannels) },
         { key: 'automodBlacklist', name: i18next.t('settings-js_buttons_name_25'), value: String(config.automodBlacklist) },
         { key: 'automodBadLinks', name: i18next.t('settings-js_buttons_name_26'), value: String(config.automodBadLinks) },
-        { key: 'uniteautomodblacklists', name: i18next.t('settings-js_buttons_name_27'), value: String(config.uniteautomodblacklists) },
-        { key: 'uniteAutomodBadLinks', name: i18next.t('settings-js_buttons_name_28'), value: String(config.uniteAutomodBadLinks) },
+        { key: 'uniteautomodblacklists', name: i18next.t('settings-js_buttons_name_27'), value: config.uniteautomodblacklists === 1 ? '✅' : '❌' },
+        { key: 'uniteAutomodBadLinks', name: i18next.t('settings-js_buttons_name_28'), value: config.uniteAutomodBadLinks === 1 ? '✅' : '❌' },
+        { key: 'manRoleName', name: i18next.t('settings-js_buttons_name_29'), value: String(config.manRoleName) },
+        { key: 'girlRoleName', name: i18next.t('settings-js_buttons_name_30'), value: String(config.girlRoleName) },
+        { key: 'newMemberRoleName', name: i18next.t('settings-js_buttons_name_31'), value: String(config.newMemberRoleName) },
     ];
-    const currentPageSettings = settings.slice(start, end);
-    currentPageSettings.forEach(setting => settingsEmbed.addFields({ name: setting.name, value: setting.value }));
 
+    const currentPageSettings = settings.slice(start, end);
+    currentPageSettings.forEach(setting => {
+        settingsEmbed.addFields({ name: setting.name, value: setting.value });
+    });
     const buttons = currentPageSettings.map(setting => createButton(setting.key, setting.name));
     const navigationButtons = new ActionRowBuilder()
         .addComponents(
@@ -604,33 +641,31 @@ async function displaySettings(interaction, config, page = 1) {
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(end >= settings.length)
         );
-
     await interaction.editReply({ embeds: [settingsEmbed], components: [new ActionRowBuilder().addComponents(buttons), navigationButtons] });
 }
 // Функция для создания кнопки в меню настроек
-function createButton(customId, label, primary = true) {
+function createButton(customId, label) {
     return new ButtonBuilder()
         .setCustomId(customId)
         .setLabel(label)
-        .setStyle(primary ? ButtonStyle.Primary : ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Primary);
 }
 // Функция для запроса нового значения настройки у пользователя
 async function promptUserForSettingValue(interaction, settingKey) {
     const filter = response => response.author.id === interaction.user.id;
 
-    await interaction.followUp({ content: i18next.t(`settings-js_enter_new_value`, { settingKey: settingKey }), ephemeral: true });
+    // Отправляем новое сообщение для запроса значения
+    await interaction.followUp({ content: i18next.t(`settings-js_enter_new_value`, { settingKey }), ephemeral: true });
 
     try {
         const collected = await interaction.channel.awaitMessages({ filter, max: 1, time: 60000, errors: ['time'] });
         const response = collected.first();
-
         const newValue = response.content;
 
         // Проверка существования сообщения перед удалением
         if (response && response.deletable) {
             await response.delete();
         }
-
         return newValue;
     } catch (err) {
         console.error('Ошибка при получении нового значения настройки:', err);
@@ -638,6 +673,7 @@ async function promptUserForSettingValue(interaction, settingKey) {
         return null;
     }
 }
+
 // Экспортируем функции для использования в других файлах
 module.exports = {
     validateUserId,
@@ -660,5 +696,6 @@ module.exports = {
     handleButtonInteraction,
     displaySettings,
     createButton,
-    promptUserForSettingValue
+    promptUserForSettingValue,
+    createRoles
 };
