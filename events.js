@@ -541,7 +541,22 @@ async function handleButtonInteraction(interaction, config, page) {
             return;
         }
 
-        // Здесь можно добавить логику для других типов настроек, если необходимо
+        // Обработка других типов настроек, которые требуют ввода нового значения
+        const newValue = await promptUserForSettingValue(interaction, settingKey);
+        if (newValue !== null) {
+            // Валидация нового значения
+            const validation = await validateSettingValue(settingKey, newValue, interaction, guildId);
+            if (validation.isValid) {
+                // Сохранение нового значения в конфигурации
+                config[settingKey] = validation.value;
+                await saveServerSettings(guildId, config);
+                const successMessage = i18next.t(`settings-js_sucess_update`, { settingKey });
+                await interaction.followUp({ content: successMessage, ephemeral: true });
+            }
+        }
+
+        // Обновляем основное меню настроек
+        await displaySettings(interaction, config, page);
 
     } catch (error) {
         console.error('Ошибка при обработке кнопки:', error);
