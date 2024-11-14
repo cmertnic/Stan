@@ -113,49 +113,53 @@ const rest = new REST().setToken(process.env.TOKEN);
       console.log(`Данные гильдии инициализированы для ID: ${guild.id}`);
     });
     // Событие при добавлении нового участника на сервер
-    robot.on('guildMemberAdd', async (member) => {
-      try {
-        const serverSettings = await getServerSettings(member.guild.id); 
-        const { newMemberRoleName } = serverSettings;
+robot.on('guildMemberAdd', async (member) => {
+  try {
+      const serverSettings = await getServerSettings(member.guild.id);
+      const { newMemberRoleName } = serverSettings;
 
-        // Получаем роль "Новичок"
-        const role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
+      // Получаем роль "Новичок"
+      let role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
 
-        if (role) {
+      if (role) {
           // Выдаем роль пользователю
           await member.roles.add(role);
           console.log(`Роль "${newMemberRoleName}" выдана пользователю ${member.user.tag}`);
-        } else {
+      } else {
           // Если роль не найдена, создаем ее
           const roleCreationMessages = await ensureRolesExist(member.guild, newMemberRoleName);
           if (roleCreationMessages) {
-            console.log(roleCreationMessages); 
+              console.log(roleCreationMessages);
+              // После создания роли снова получаем её и выдаем пользователю
+              role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
+              if (role) {
+                  await member.roles.add(role);
+                  console.log(`Роль "${newMemberRoleName}" выдана пользователю ${member.user.tag} после создания.`);
+              }
           }
-        }
-      } catch (error) {
-        console.error(`Ошибка при выдаче роли "${newMemberRoleName}": ${error.message}`);
       }
-    });
+  } catch (error) {
+      console.error(`Ошибка при выдаче роли "${newMemberRoleName}": ${error.message}`);
+  }
+});
 
-    // Функция для создания ролей
-    async function ensureRolesExist(guild, roleName) {
-      try {
-        const existingRole = guild.roles.cache.find(role => role.name === roleName);
-        if (!existingRole) {
-          // Создаем роль
-          const newRole = await guild.roles.create({
-            name: roleName,
-            color: 'BLUE', // Вы можете изменить цвет роли
-            reason: 'Создание роли для новых участников'
-          });
-          return `Роль "${newRole.name}" была создана.`;
-        }
-        return null; // Роль уже существует
-      } catch (error) {
-        console.error(`Ошибка при создании роли: ${error.message}`);
-        return null;
-      }
-    }
+// Функция для создания роли, если она не существует
+async function ensureRolesExist(guild, roleName) {
+  try {
+      const roleColor = 0x0000FF; // Задайте нужный цвет в шестнадцатеричном формате
+      const newRole = await guild.roles.create({
+          name: roleName,
+          color: roleColor,
+          permissions: [],
+      });
+      return `Роль "${newRole.name}" была успешно создана!`;
+  } catch (error) {
+      console.error(`Ошибка при создании роли "${roleName}": ${error.message}`);
+      return null;
+  }
+}
+
+
     robot.on('ready', async () => {
       console.log(`${robot.user.username} готов вкалывать`);
       const guilds = robot.guilds.cache;

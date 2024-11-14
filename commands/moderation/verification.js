@@ -1,12 +1,13 @@
-const { Client, ChannelType, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
-const { i18next, t } = require('../../i18n');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { ChannelType, EmbedBuilder } = require('discord.js');
+const { i18next } = require('../../i18n');
+const { createMainLogChannel } = require('../../events');
 const { getServerSettings } = require('../../database/settingsDb');
-const { createLogChannel, createRoles } = require('../../events');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('verify')
-        .setDescription( i18next.t('verify-js_description'))
+        .setDescription(i18next.t('verify-js_description'))
         .addUserOption(option => option
             .setName('user')
             .setDescription(i18next.t('verify-js_description'))
@@ -16,12 +17,12 @@ module.exports = {
             .setDescription(i18next.t('verify-js_action'))
             .setRequired(true)
             .addChoices(
-                { name: (i18next.t('verify-js_give_role')), value: 'give_role' },
-                { name: (i18next.t('verify-js_deny_access')), value: 'deny_access' },
-                { name: (i18next.t('verify-js_change_gender')), value: 'change_gender' }
+                { name: i18next.t('verify-js_give_role'), value: 'give_role' },
+                { name: i18next.t('verify-js_deny_access'), value: 'deny_access' },
+                { name: i18next.t('verify-js_change_gender'), value: 'change_gender' }
             ))
         .addStringOption(option => option
-            .setName('gender') // Изменено с 'Гендер' на 'gender'
+            .setName('gender')
             .setDescription('Change gender')
             .setRequired(false)
             .addChoices(
@@ -36,39 +37,35 @@ module.exports = {
         await interaction.deferReply({ ephemeral: true });
 
         try {
-            const userIdToVerify = interaction.options.getUser ('user').id; 
-            const action = interaction.options.getString('action'); 
+            const userIdToVerify = interaction.options.getUser ('user').id;
+            const action = interaction.options.getString('action');
             const memberToVerify = await interaction.guild.members.fetch(userIdToVerify);
 
             if (!memberToVerify) {
-                return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
+                return await interaction.editReply({ content: i18next.t('User _not_found'), ephemeral: true });
             }
 
             // Получение настроек сервера
             const serverSettings = await getServerSettings(interaction.guild.id);
-            const { logChannelName,manRoleName,girlRoleName,newmemberrolename } = serverSettings;
-            const gender = interaction.options.getString('gender'); // Изменено с 'Гендер' на 'gender'
+            const { logChannelName, manRoleName, girlRoleName, newMemberRoleName } = serverSettings;
+            const gender = interaction.options.getString('gender');
             const botMember = interaction.guild.members.me;
             let logChannel = interaction.guild.channels.cache.find(ch => ch.name === logChannelName);
 
-            // Если канал для логов не найден, создаем его
+            // Проверка и создание лог-канала, если он не найден
             if (!logChannel) {
-                const logChannelCreationResult = await createLogChannel(interaction, logChannelName, botMember, interaction.guild.roles.cache, serverSettings);
-
-                if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
-                }
-
+                const channelCreationMessage = await createMainLogChannel(interaction, logChannelName, botMember, interaction.guild.roles.cache.filter(role => botMember.roles.highest.comparePositionTo(role) < 0), serverSettings);
+                console.log(channelCreationMessage);
                 logChannel = interaction.guild.channels.cache.find(ch => ch.name === logChannelName);
+                if (!logChannel) {
+                    return await interaction.editReply({ content: 'Не удалось создать или найти канал логов.', ephemeral: true });
+                }
             }
 
-            // Проверяем наличие прав у бота
+            // Проверка прав на отправку сообщений
             if (!logChannel.permissionsFor(botMember).has('SEND_MESSAGES')) {
-                return await interaction.editReply({ content: 'The bot does not have permission to send messages to the log channel.', ephemeral: true });
+                return await interaction.editReply({ content: 'У бота нет прав на отправку сообщений в канал логов.', ephemeral: true });
             }
-
-            const rolesToCreate = [manRoleName, girlRoleName];
-            const rolesCreationMessages = await createRoles(interaction, rolesToCreate);
 
             switch (action) {
                 case 'give_role':
@@ -89,11 +86,14 @@ module.exports = {
 
                         await memberToVerify.roles.add(roleToAssign);
                         await interaction.editReply({ content: i18next.t('verify-js_role_add', { rolename: roleToAssign.name, userIdToVerify: userIdToVerify }), ephemeral: true });
+
                         // Убираем роль "Новичок", если она есть
-                        const rookieRole = interaction.guild.roles.cache.find(role => role.name === newmemberrolename);
+                        const rookieRole = interaction.guild.roles.cache.find(role => role.name === newMemberRoleName);
                         if (rookieRole && memberToVerify.roles.cache.has(rookieRole.id)) {
                             await memberToVerify.roles.remove(rookieRole);
+                            console.log(`Роль "Новичок" была удалена у пользователя ${userIdToVerify}.`);
                         }
+
                         // Отправка личного сообщения пользователю
                         try {
                             await memberToVerify.send(i18next.t('verify-js_role_assigned_message', { rolename: roleToAssign.name, moderator: interaction.user.id }));
@@ -117,7 +117,7 @@ module.exports = {
                     break;
 
                 case 'deny_access':
-                    const reason = 'Non-admission'; // Указываем причину бана
+                    const reason = 'Non-admission';
                     await memberToVerify.ban({ reason }).catch(error => {
                         console.error(`Ошибка при бане пользователя: ${error.message}`);
                         return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
@@ -140,7 +140,7 @@ module.exports = {
                     const maleRole = interaction.guild.roles.cache.find(role => role.name === manRoleName);
                     const femaleRole = interaction.guild.roles.cache.find(role => role.name === girlRoleName);
 
-                    if (memberToVerify.roles.cache.has(femaleRole.id) && maleRole) {
+                    if (gender === 'male' && femaleRole && memberToVerify.roles.cache.has(femaleRole.id)) {
                         await memberToVerify.roles.remove(femaleRole);
                         await memberToVerify.roles.add(maleRole);
                         await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), ephemeral: true });
@@ -155,7 +155,7 @@ module.exports = {
 
                         // Отправка embed в канал логов
                         await logChannel.send({ embeds: [genderChangeEmbedMale] });
-                    } else if (memberToVerify.roles.cache.has(maleRole.id) && femaleRole) {
+                    } else if (gender === 'female' && maleRole && memberToVerify.roles.cache.has(maleRole.id)) {
                         await memberToVerify.roles.remove(maleRole);
                         await memberToVerify.roles.add(femaleRole);
                         await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), ephemeral: true });
