@@ -75,7 +75,6 @@ async function removeStaleSettings(guildIds) {
         console.error('Ошибка при удалении устаревших настроек:', err.message);
         reject(err);
       } else {
-        console.log(`Удалено ${this.changes} устаревших записей настроек из базы данных.`);
         resolve();
       }
     });

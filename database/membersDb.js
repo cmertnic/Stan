@@ -122,8 +122,10 @@ async function removeStaleMembers(guild) {
                 console.error('Ошибка при удалении устаревших участников:', err.message);
                 reject(err);
             } else {
-                console.log(`Удалено ${this.changes} устаревших записей участников из базы данных.`);
-                resolve();
+                if (this.changes > 0) {
+                    console.log(`Удалено ${this.changes} устаревших записей участников из базы данных.`);
+                }
+                resolve(this.changes); 
             }
         });
     });
@@ -132,9 +134,6 @@ async function removeStaleMembers(guild) {
 // Функция для обновления информации о ролях участников
 async function updateMembersInfo(robot) {
     for (const guild of robot.guilds.cache.values()) {
-        // Удаляем устаревшие записи
-        await removeStaleMembers(guild);
-
         // Получаем всех участников сервера
         const members = await guild.members.fetch();
 
@@ -175,9 +174,11 @@ function saveMemberInfoToDatabase(userId, guildId) {
     insertStmt.finalize();
 }
 
+// Экспортируем функции
 module.exports = {
     getAllMemberIds,
     saveMemberInfoToDatabase,
     getMember,
-    updateMembersInfo
+    updateMembersInfo,
+    removeStaleMembers
 };
