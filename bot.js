@@ -6,11 +6,11 @@ const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuil
 const fs = require('fs');
 const cron = require('node-cron');
 const { initializeDefaultServerSettings, getServerSettings, } = require('./database/settingsDb');
-const { getAllMemberIds, updateMembersInfo } = require('./database/membersDb');
+const { getAllMemberIds, updateMembersInfo,removeStaleMembers } = require('./database/membersDb');
 const { removeExpiredWarnings } = require('./database/warningsDb');
 const { removeExpiredMutes } = require('./database/mutesDb');
 const { initializeI18next, i18next, t } = require('./i18n');
-const { createLogChannel, createRoles } = require('./events');
+const { createLogChannel } = require('./events');
 // Инициализируем массивы для хранения черного списка и плохих ссылок
 let blacklist = [];
 let bad_links = [];
@@ -315,28 +315,37 @@ async function ensureRolesExist(guild, roleName) {
 
     function setupCronJobs() {
       cron.schedule('*/2 * * * *', async () => {
-        console.log('Запуск задачи по расписанию для удаления истекших предупреждений и мутов.');
-        for (const guild of robot.guilds.cache.values()) {
-          const guildId = guild.id;
-          try {
-            // Получаем настройки сервера
-            const serverSettings = await getServerSettings(guildId);
-
-            // Получаем ID всех участников
-            const memberIds = await getAllMemberIds(guild);
-
-            // Обновляем информацию об участниках
-            await updateMembersInfo(robot, guildId, memberIds);
-
-            // Удаление истекших предупреждений и мутов
-            await removeExpiredWarnings(robot, guildId, serverSettings, memberIds);
-            await removeExpiredMutes(robot, guildId);
-          } catch (error) {
-            console.error(`Ошибка при обработке сервера ${guildId}:`, error);
+          console.log('Запуск задачи по расписанию для удаления истекших предупреждений и мутов.');
+          let hasExpiredRecords = false; // Флаг для отслеживания наличия устаревших записей
+  
+          for (const guild of robot.guilds.cache.values()) {
+              const guildId = guild.id;
+              try {
+                  // Получаем настройки сервера
+                  const serverSettings = await getServerSettings(guildId);
+  
+                  // Получаем ID всех участников
+                  const memberIds = await getAllMemberIds(guild);
+  
+                  // Обновляем информацию об участниках
+                  await updateMembersInfo(robot, guildId, memberIds);
+  
+                  // Удаление истекших предупреждений и мутов
+                  await removeExpiredWarnings(robot, guildId, serverSettings, memberIds);
+                  await removeExpiredMutes(robot, guildId);
+  
+                  // Удаление устаревших участников
+                  const staleMembersRemoved = await removeStaleMembers(guild);
+                  if (staleMembersRemoved > 0) {
+                      hasExpiredRecords = true; 
+                  }
+              } catch (error) {
+                  console.error(`Ошибка при обработке сервера ${guildId}:`, error);
+              }
           }
-        }
       });
-    }
+  }
+  
 
     setupCronJobs();
     robot.login(process.env.TOKEN);
