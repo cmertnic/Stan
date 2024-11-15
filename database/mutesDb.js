@@ -72,21 +72,25 @@ async function removeMuteFromDatabase(robot, guildId, userId) {
     const muteLogChannelName = serverSettings.muteLogChannelName;
     const muteLogChannelNameUse = serverSettings.muteLogChannelNameUse;
     const guild = robot.guilds.cache.get(guildId);
+    
     if (!guild) {
         console.error(`Гильдия с ID ${guildId} не найдена`);
         return;
     }
 
     const mutedRole = guild.roles.cache.find(role => role.name === mutedRoleName);
-
     if (!mutedRole) {
         console.error(`Роль мута не найдена для гильдии ${guildId}`);
         return;
     }
 
-    const memberToMute = await guild.members.fetch(userId);
-    if (!memberToMute) {
-        console.error(`Участник с ID ${userId} не найден в гильдии ${guildId}`);
+    let memberToMute;
+    try {
+        memberToMute = await guild.members.fetch(userId);
+    } catch (error) {
+        console.error(`Участник с ID ${userId} не найден в гильдии ${guildId}: ${error.message}`);
+        // Удаляем данные о пользователе из базы данных
+        await removeUserMuteFromDatabase(guildId, userId);
         return;
     }
 
@@ -104,6 +108,7 @@ async function removeMuteFromDatabase(robot, guildId, userId) {
         } else {
             logChannel = guild.channels.cache.find(ch => ch.name === logChannelName);
         }
+        
         if (!logChannel) {
             const channelNameToCreate = muteLogChannelNameUse ? muteLogChannelName : logChannelName;
             const roles = guild.roles.cache;
@@ -124,6 +129,22 @@ async function removeMuteFromDatabase(robot, guildId, userId) {
         console.error(`Ошибка при удалении роли мута с участника ${userId}: ${error}`);
         return;
     }
+}
+
+// Функция для удаления данных о пользователе из базы данных
+async function removeUserMuteFromDatabase(guildId, userId) {
+    return new Promise((resolve, reject) => {
+        const query = 'DELETE FROM mutes WHERE userId = ? AND guildId = ?';
+        mutesDb.run(query, [userId, guildId], function (err) {
+            if (err) {
+                console.error(`Ошибка при удалении данных о пользователе ${userId} из базы данных: ${err.message}`);
+                reject(err);
+            } else {
+                console.log(`Данные о пользователе ${userId} успешно удалены из базы данных.`);
+                resolve();
+            }
+        });
+    });
 }
 
 // Функция для получения всех активных мутов
@@ -155,7 +176,6 @@ async function getExpiredMutes(guildId) {
                     console.error(`getExpiredMutes: An error occurred: ${err.message}`);
                     reject(err);
                 } else {
-
                     const processedRows = rows.map(row => ({
                         ...row,
                         duration: new Date(row.duration).toLocaleString('ru-RU'),
@@ -181,7 +201,6 @@ async function removeExpiredMutes(robot, guildId) {
     }
 
     try {
-
         const botMember = await guild.members.fetch(robot.user.id);
         if (!botMember) {
             console.error('Не удалось получить бота как участника гильдии.');
@@ -195,15 +214,17 @@ async function removeExpiredMutes(robot, guildId) {
 
         for (const mute of expiredMutes) {
             try {
-
-                const member = await guild.members.fetch(mute.userId).catch(() => null);
-                if (!member) {
+                let member;
+                try {
+                    member = await guild.members.fetch(mute.userId);
+                } catch (error) {
                     console.error(`Пользователь с ID ${mute.userId} не найден на сервере.`);
-                    continue;
+                    // Удаляем данные о пользователе из базы данных
+                    await removeUserMuteFromDatabase(guildId, mute.userId);
+                    continue; // Пропускаем итерацию, если участник не найден
                 }
 
                 await removeMuteFromDatabase(robot, guildId, mute.userId);
-
 
             } catch (error) {
                 console.error(`Ошибка при удалении мута для пользователя с ID: ${mute.userId}: ${error}`);

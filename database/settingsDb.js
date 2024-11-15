@@ -67,6 +67,21 @@ db.run(`CREATE TABLE IF NOT EXISTS server_settings (
   }
 });
 
+// Функция для удаления устаревших записей из таблицы server_settings
+async function removeStaleSettings(guildIds) {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM server_settings WHERE guildId NOT IN (' + guildIds.map(() => '?').join(',') + ')', guildIds, function(err) {
+      if (err) {
+        console.error('Ошибка при удалении устаревших настроек:', err.message);
+        reject(err);
+      } else {
+        console.log(`Удалено ${this.changes} устаревших записей настроек из базы данных.`);
+        resolve();
+      }
+    });
+  });
+}
+
 // Функция для сохранения настроек сервера в базе данных
 function saveServerSettings(guildId, settings) {
   return new Promise((resolve, reject) => {
@@ -74,15 +89,15 @@ function saveServerSettings(guildId, settings) {
       guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
       maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
       reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels, automodBlacklist,
-      automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks,manRoleName,girlRoleName,newMemberRoleName
+      automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
     } = settings;
 
     db.run(`REPLACE INTO server_settings
         (guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
         maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
         reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language,
-        automod,NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks,manRoleName,girlRoleName,newMemberRoleName)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)`,
+        automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
         maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
@@ -114,7 +129,7 @@ async function getServerSettings(guildId) {
 }
 
 // Функция для инициализации настроек сервера по умолчанию
-async function initializeDefaultServerSettings(guildId) {
+async function initializeDefaultServerSettings(guildId, allGuildIds) {
   try {
     const settings = await getServerSettings(guildId);
     if (!settings.logChannelName) {
@@ -155,6 +170,9 @@ async function initializeDefaultServerSettings(guildId) {
       await saveServerSettings(guildId, defaultSettings);
       console.log(`Настройки по умолчанию инициализированы для сервера: ${guildId}`);
     }
+
+    // Удаляем устаревшие записи
+    await removeStaleSettings(allGuildIds);
   } catch (err) {
     console.error(`Ошибка при инициализации настроек сервера: ${err.message}`);
     throw err;

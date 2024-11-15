@@ -54,14 +54,12 @@ async function getUserWarnings(userId) {
 
 // Функция для сохранения предупреждения в базу данных
 async function saveWarningToDatabase(interaction, userIdToWarn, durationMs, reason) {
-    // Проверка входных данных и получение настроек сервера
     if (!interaction || !interaction.guild || !interaction.guild.id) {
         throw new Error('Не предоставлен объект interaction с необходимыми свойствами');
     }
     const serverSettings = await getServerSettings(interaction.guild.id);
     const warningDuration = serverSettings.warningDuration || 3600000;
 
-    // Обработка причины предупреждения и времени действия
     if (!reason) {
         reason = i18next.t('defaultReason');
     }
@@ -73,7 +71,6 @@ async function saveWarningToDatabase(interaction, userIdToWarn, durationMs, reas
     const duration = Date.now() + durationMs;
 
     try {
-        // Вставка новой записи в базу данных
         const result = await new Promise((resolve, reject) => {
             warningsDb.run(`INSERT INTO warnings (guildId, userId, duration, reason) VALUES (?, ?, ?, ?)`, [interaction.guild.id, userIdToWarn, duration, reason], function (err) {
                 if (err) {
@@ -94,22 +91,19 @@ async function saveWarningToDatabase(interaction, userIdToWarn, durationMs, reas
 // Асинхронная функция для получения истекших предупреждений
 async function getExpiredWarnings(robot, guildId) {
     try {
-        const currentTime = Date.now(); // Текущее время в формате временной метки Unix
+        const currentTime = Date.now();
 
-        // Проверка наличия необходимых свойств у объекта robot
         if (!robot || !robot.guilds || !robot.guilds.cache) {
             console.error('Некорректный объект robot.');
             return [];
         }
 
-        // Получение сервера по ID и проверка его существования
         const guild = await robot.guilds.fetch(guildId).catch(console.error);
         if (!guild) {
             console.error(`Ошибка: Сервер с ID ${guildId} не найден.`);
             return [];
         }
 
-        // Получение истекших предупреждений с использованием async/await
         const rows = await new Promise((resolve, reject) => {
             warningsDb.all(`SELECT * FROM warnings WHERE duration <= ? AND guildId = ?`, [currentTime, guildId], (err, rows) => {
                 if (err) {
@@ -170,10 +164,14 @@ async function removeWarningFromDatabase(robot, guildId, userId) {
                 // Оповещение об успешном удалении предупреждения
                 if (robot) {
                     const guild = robot.guilds.cache.get(guildId);
-                    const member = await guild.members.fetch(userId).catch(console.error);
-                    if (member && member.permissions.has(PermissionsBitField.Flags.SendMessages)) {
-                        const message = i18next.t('warningsDb-js_removeMuteFromDatabase_member_send');
-                        await member.send(message).catch(console.error);
+                    try {
+                        const member = await guild.members.fetch(userId);
+                        if (member && member.permissions.has(PermissionsBitField.Flags.SendMessages)) {
+                            const message = i18next.t('warningsDb-js_removeMuteFromDatabase_member_send');
+                            await member.send(message).catch(console.error);
+                        }
+                    } catch (error) {
+                        console.error(`Ошибка при получении участника с ID ${userId}: ${error.message}`);
                     }
                 } else {
                     console.error('Ошибка: robot или robot.guilds не определены.');
@@ -183,7 +181,22 @@ async function removeWarningFromDatabase(robot, guildId, userId) {
     });
 }
 
-// Асинхронная функция для получения количества предупреждений пользователя
+// Функция для удаления данных о пользователе из базы данных
+async function removeUserWarningsFromDatabase(guildId, userId) {
+    return new Promise((resolve, reject) => {
+        const query = 'DELETE FROM warnings WHERE userId = ? AND guildId = ?';
+        warningsDb.run(query, [userId, guildId], function (err) {
+            if (err) {
+                console.error(`Ошибка при удалении данных о пользователе ${userId} из базы данных: ${err.message}`);
+                reject(err);
+            } else {
+                console.log(`Данные о пользователе ${userId} успешно удалены из базы данных.`);
+                resolve();
+            }
+        });
+    });
+}
+// Функция для получения количества предупреждений пользователя
 async function getWarningsCount(userIdToWarn) {
     userIdToWarn = String(userIdToWarn);
 
@@ -203,21 +216,17 @@ async function getWarningsCount(userIdToWarn) {
         return 0;
     }
 }
-
 // Функция для удаления истекших предупреждений
 async function removeExpiredWarnings(robot, guildId) {
     const guild = robot.guilds.cache.get(guildId);
 
-    // Получение настроек сервера
     const serverSettings = await getServerSettings(guildId);
     const logChannelName = serverSettings.logChannelName;
     const warningLogChannelName = serverSettings.warningLogChannelName;
     const warningLogChannelNameUse = serverSettings.warningLogChannelNameUse;
 
-    // Получение бота как участника сервера
     const botMember = await guild.members.fetch(robot.user.id);
 
-    // Определение канала для логирования
     let logChannel;
     if (warningLogChannelNameUse) {
         logChannel = guild.channels.cache.find(ch => ch.name === warningLogChannelName);
@@ -232,35 +241,34 @@ async function removeExpiredWarnings(robot, guildId) {
             const higherRoles = [...roles.values()].filter(role => botMember.roles.highest.comparePositionTo(role) < 0);
             const logChannelCreationResult = await createLogChannel(robot, guild, channelNameToCreate, botMember, higherRoles, serverSettings);
 
-            // Выход из функции, если произошла ошибка при создании канала
             if (logChannelCreationResult.startsWith('Ошибка')) {
                 console.error(`Ошибка при создании канала: ${logChannelCreationResult}`);
             }
 
-            // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
             logChannel = guild.channels.cache.find(ch => ch.name === channelNameToCreate);
         } catch {
             logChannel = logChannelName;
         }
-
     }
-    // Получение истекших предупреждений
+
     const expiredWarnings = await getExpiredWarnings(robot, guildId);
     if (!expiredWarnings || expiredWarnings.length === 0) {
         return;
     }
 
-    // Обработка каждого истекшего предупреждения
     for (const warning of expiredWarnings) {
         try {
-            // Получение пользователя по ID
-            const member = await guild.members.fetch(warning.userId).catch(console.error);
-            if (!member) {
+            // Проверка существования участника перед вызовом
+            let member;
+            try {
+                member = await guild.members.fetch(warning.userId);
+            } catch (error) {
                 console.error(`- Ошибка: Пользователь с ID ${warning.userId} не найден на сервере.`);
-                continue;
+                // Удаляем данные о пользователе из базы данных
+                await removeUserWarningsFromDatabase(guildId, warning.userId);
+                continue; // Пропускаем итерацию, если участник не найден
             }
 
-            // Удаление предупреждения из базы данных
             const warningsCount = await getWarningsCount(warning.userId);
             if (warningsCount === 0) {
                 console.error(`- Ошибка: Предупреждение для пользователя с ID ${warning.userId} не найдено.`);

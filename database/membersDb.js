@@ -112,9 +112,29 @@ async function getMember(guild, userId) {
     }
 }
 
+// Функция для удаления ненужных записей из базы данных
+async function removeStaleMembers(guild) {
+    const allMemberIds = await guild.members.fetch().then(members => members.map(member => member.id));
+
+    return new Promise((resolve, reject) => {
+        membersDb.run('DELETE FROM members WHERE guildId = ? AND userId NOT IN (' + allMemberIds.map(() => '?').join(',') + ')', [guild.id, ...allMemberIds], function(err) {
+            if (err) {
+                console.error('Ошибка при удалении устаревших участников:', err.message);
+                reject(err);
+            } else {
+                console.log(`Удалено ${this.changes} устаревших записей участников из базы данных.`);
+                resolve();
+            }
+        });
+    });
+}
+
 // Функция для обновления информации о ролях участников
 async function updateMembersInfo(robot) {
     for (const guild of robot.guilds.cache.values()) {
+        // Удаляем устаревшие записи
+        await removeStaleMembers(guild);
+
         // Получаем всех участников сервера
         const members = await guild.members.fetch();
 
