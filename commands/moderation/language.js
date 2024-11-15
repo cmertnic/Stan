@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ChannelType, PermissionsBitField } = require('discord.js');
 const { saveServerSettings, getServerSettings } = require('../../database/settingsDb');
-const validLanguages = ['eng', 'rus'];
+const validLanguages = ['ben', 'chi', 'eng', 'fra', 'ger', 'hin', 'jpn', 'kor', 'por', 'rus', 'spa'];
 const { i18next, t, updateI18nextLanguage } = require('../../i18n');
 const userCommandCooldowns = new Map();
 
