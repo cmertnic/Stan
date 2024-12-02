@@ -74,7 +74,7 @@ module.exports = {
 
             // Создание роли для замьюченых пользователей
             const mutedRoleMessage = await createMutedRole(interaction, serverSettings);
-            responseMessage += `✅ ${mutedRoleMessage}\n`;
+            responseMessage += `${mutedRoleMessage}\n`;
 
             await interaction.followUp({ content: responseMessage + `✅ ${i18next.t('test-js_sucess')}`, ephemeral: true });
         } catch (error) {

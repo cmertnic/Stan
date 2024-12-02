@@ -1,23 +1,21 @@
-// Подключаем модуль dotenv для загрузки переменных окружения из файла .env
+// Подключаем необходимые модули
 const dotenv = require('dotenv');
-dotenv.config();
-
-// Подключаем модуль path для работы с путями файлов
 const path = require('path');
-
-// Подключаем модуль sqlite3 для работы с базой данных SQLite
 const sqlite3 = require('sqlite3').verbose();
 
-// Проверяем, что переменная окружения SQLITE_SETTINGS_DB_PATH определена
+// Загружаем переменные окружения из файла .env
+dotenv.config();
+
+// Проверяем наличие переменной окружения SQLITE_SETTINGS_DB_PATH
 if (!process.env.SQLITE_SETTINGS_DB_PATH) {
   console.error('Переменная окружения SQLITE_SETTINGS_DB_PATH не определена.');
   process.exit(1);
 }
 
-// Получаем путь к базе данных из переменной окружения SQLITE_SETTINGS_DB_PATH
+// Получаем путь к базе данных из переменной окружения
 const dbPath = path.resolve(process.env.SQLITE_SETTINGS_DB_PATH);
 
-// Создаем новое подключение к базе данных с флагами OPEN_READWRITE и OPEN_CREATE
+// Создаем новое подключение к базе данных
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
   if (err) {
     console.error(`Ошибка при подключении к базе данных: ${err.message}`);
@@ -69,6 +67,11 @@ db.run(`CREATE TABLE IF NOT EXISTS server_settings (
 
 // Функция для удаления устаревших записей из таблицы server_settings
 async function removeStaleSettings(guildIds) {
+  if (!Array.isArray(guildIds) || guildIds.length === 0) {
+    console.error('guildIds не является массивом или пустым');
+    return;
+  }
+
   return new Promise((resolve, reject) => {
     db.run('DELETE FROM server_settings WHERE guildId NOT IN (' + guildIds.map(() => '?').join(',') + ')', guildIds, function(err) {
       if (err) {
@@ -81,27 +84,32 @@ async function removeStaleSettings(guildIds) {
   });
 }
 
+
 // Функция для сохранения настроек сервера в базе данных
 function saveServerSettings(guildId, settings) {
   return new Promise((resolve, reject) => {
     const {
-      guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
-      maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
-      reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels, automodBlacklist,
-      automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
+      muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice,
+      warningLogChannelName, warningLogChannelNameUse, warningDuration, maxWarnings, warningsNotice,
+      banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName,
+      kickLogChannelNameUse, reportLogChannelName, reportLogChannelNameUse, clearLogChannelName,
+      clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels,
+      automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
     } = settings;
 
     db.run(`REPLACE INTO server_settings
         (guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
         maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
         reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language,
-        automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName)
+        automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
-        maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
-        reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels, automodBlacklist,
-        automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
+        guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice,
+        warningLogChannelName, warningLogChannelNameUse, warningDuration, maxWarnings, warningsNotice,
+        banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName,
+        kickLogChannelNameUse, reportLogChannelName, reportLogChannelNameUse, clearLogChannelName,
+        clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels,
+        automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
       ], (err) => {
         if (err) {
           console.error(`Ошибка при сохранении настроек сервера: ${err.message}`);
@@ -160,8 +168,8 @@ async function initializeDefaultServerSettings(guildId, allGuildIds) {
         NotAutomodChannels: process.env.NOTAUTOMODCHANNELS || 'stan_logs, clear_stan_log',
         automodBlacklist: process.env.AUTOMODBLACKLIST || 'fuck',
         automodBadLinks: process.env.AUTOMODBADLINKS || 'azino777cashcazino-slots.ru',
-        uniteautomodblacklists: process.env.UNITE_AUTOMODBLACKLISTS || '0' ? false : true,
-        uniteAutomodBadLinks: process.env.UNITE_AUTOMODBADLINKS || '0' ? false : true,
+        uniteautomodblacklists: process.env.UNITE_AUTOMODBLACKLISTS === '0' ? false : true,
+        uniteAutomodBadLinks: process.env.UNITE_AUTOMODBADLINKS === '0' ? false : true,
         manRoleName: process.env.MANROLENAME || '♂',
         girlRoleName: process.env.GIRLROLENAME || '♀',
         newMemberRoleName: process.env.NEWMEMBERROLENAME || 'NewMember',
