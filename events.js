@@ -1,12 +1,11 @@
 const cron = require('node-cron');
 const validLanguages = ['ben', 'chi', 'eng', 'fra', 'ger', 'hin', 'jpn', 'kor', 'por', 'rus', 'spa'];
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits, EmbedBuilder, StringSelectMenuBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, StringSelectMenuBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
 const { saveServerSettings, getServerSettings } = require('./database/settingsDb');
 const { i18next, t, updateI18nextLanguage } = require('./i18n');
-
 // Функция для валидации ID пользователя с помощью регулярного выражения
 function validateUserId(userId) {
     const regex = /^(?:<@)?!?(\d{17,19})>?$/;
@@ -40,6 +39,92 @@ function formatDuration(duration) {
     return parts.join(' ');
 }
 
+// Функция для проверки условий анти-рейда
+async function checkAntiRaidConditions(member, banRoleName, logChannelName, banLogChannelName, banLogChannelNameUse) {
+    const guild = member.guild;
+    let logChannel;
+
+    // Определяем, какой лог-канал использовать
+    if (banLogChannelNameUse) {
+        logChannel = guild.channels.cache.find(ch => ch.name === banLogChannelName);
+    } else {
+        logChannel = guild.channels.cache.find(ch => ch.name === logChannelName);
+    }
+
+    const now = Date.now();
+    const joinTime = now; // Время, когда пользователь присоединился
+    recentJoins.set(member.id, joinTime); // Сохраняем время присоединения
+
+    // Условие 1: Если на сервер заходит 25 человек за 2 минуты
+    const twoMinutesAgo = now - 2 * 60 * 1000; // Время 2 минуты назад
+    const recentMembers = [...recentJoins.entries()].filter(([id, time]) => time >= twoMinutesAgo);
+
+    if (recentMembers.length >= 25) {
+        const role = guild.roles.cache.find(r => r.name === banRoleName);
+        if (role) {
+            await member.roles.add(role);
+            // Логируем назначение роли
+            if (logChannel) {
+                await logChannel.send(`Пользователю ${member.user.tag} была назначена роль "${banRoleName}" из-за рейда (25 участников за 2 минуты).`);
+            }
+        }
+    }
+
+    // Условие 2: Если аккаунту пользователя меньше 30 минут
+    const accountAge = (now - member.user.createdTimestamp) / 1000 / 60; // Возраст аккаунта в минутах
+    if (accountAge < 30) {
+        try {
+            await member.send('Ваш аккаунт слишком молодой. Пожалуйста, зайдите позже.');
+        } catch (error) {
+            console.error(`Не удалось отправить сообщение пользователю ${member.user.tag}: ${error}`);
+        }
+
+        await member.kick('Молодой аккаунт');
+        console.log(`Пользователь ${member.user.tag} был кикнут за молодой аккаунт.`);
+        // Логируем кик пользователя
+        if (logChannel) {
+            await logChannel.send(`Пользователь ${member.user.tag} был кикнут за молодой аккаунт (менее 30 минут).`);
+        }
+        return;
+    }
+
+    // Условие 3: Если никнейм пользователя почти совпадает с никнеймами 3 пользователей
+    const similarNames = [...guild.members.cache.values()].filter(m => {
+        return m.user.username.toLowerCase().includes(member.user.username.toLowerCase()) && m.id !== member.id;
+    });
+
+    if (similarNames.length >= 3) {
+        const role = guild.roles.cache.find(r => r.name === banRoleName);
+        if (role) {
+            await member.roles.add(role);
+            // Логируем назначение роли
+            if (logChannel) {
+                await logChannel.send(`Пользователю ${member.user.tag} была назначена роль "${banRoleName}" за совпадение с ${similarNames.length} пользователями.`);
+            }
+        }
+    }
+}
+
+// Функция для выдачи роли "Новичок"
+async function assignNewMemberRole(member, newMemberRoleName) {
+    let role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
+
+    if (role) {
+        // Выдаем роль пользователю
+        await member.roles.add(role);
+    } else {
+        // Если роль не найдена, создаем ее
+        const roleCreationMessages = await ensureRolesExist(member.guild, newMemberRoleName);
+        if (roleCreationMessages) {
+            console.log(roleCreationMessages);
+            // После создания роли снова получаем её и выдаем пользователю
+            role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
+            if (role) {
+                await member.roles.add(role);
+            }
+        }
+    }
+}
 // Функция для преобразования пользовательского формата времени в миллисекунды
 function convertToTimestamp(customTimeFormat) {
     const defaultValues = { days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0 };
@@ -200,6 +285,7 @@ async function sendPartAndDelete(context, part) {
         console.error('Ошибка при отправке или удалении сообщения:', error);
     }
 }
+
 // Функция для создания главного канала лоигрования
 async function createMainLogChannel(interaction, channelName, botMember, higherRoles, serverSettings) {
     const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles);
@@ -260,7 +346,6 @@ async function getOrCreateLogChannel(guild, channelName, botMember, higherRoles)
         }
     }
 }
-
 // Функция для создания побочных каналов логирования
 async function createLogChannel(interaction, channelName, botMember, higherRoles) {
     const result = await getOrCreateLogChannel(interaction.guild, channelName, botMember, higherRoles);
@@ -274,6 +359,7 @@ async function createLogChannel(interaction, channelName, botMember, higherRoles
         return i18next.t('events-js_logChannel_error', { channelName: channelName });
     }
 }
+
 // Функция для создания роли мута
 async function createMutedRole(interaction, serverSettings) {
     let mutedRole = interaction.guild.roles.cache.find(role => role.name === serverSettings.mutedRoleName);
@@ -324,13 +410,24 @@ async function notifyUserAndLogMute(interaction, memberToMute, botMember, reason
     }
 
     const reasonMessage = reason ? i18next.t('mute-js_reasonMessage_1', { reason: reason }) : i18next.t('mute-js_reasonMessage_2', { defaultReason: defaultReason });
-    const moderatorMessage = moderatorId ? i18next.t('mute-js_moderatorMessage_1', { userTag: interaction.user.tag }) : i18next.t('mute-js_moderatorMessage_2');
 
     if (muteNotice && memberToMute) {
         try {
-            await memberToMute.send(i18next.t('mute-js_user_message', { guildName: interaction.guild.name, durationn: durationn, reasonMessage: reasonMessage }));
-        } catch {
+            const embed = new EmbedBuilder()
+                .setColor('#FFFFE0') // Color of the embed (orange for mute)
+                .setDescription(
+                    i18next.t('mute-js_user_message', {
+                        moderator: interaction.user.id,
+                        guildName: interaction.guild.name,
+                        durationn: durationn,
+                        reasonMessage: reasonMessage,
+                    })
+                )
+                .setTimestamp();
 
+            await memberToMute.send({ embeds: [embed] });
+        } catch (error) {
+            console.error('Ошибка отправки сообщения:', error);
         }
     }
 
@@ -382,17 +479,24 @@ async function notifyUserAndLogWarn(interaction, memberToWarn, formattedDuration
 
     if (warningsNotice && memberToWarn) {
         try {
-            await memberToWarn.send(
-                t('warn-js_error_message_user', {
-                    guildname: interaction.guild.name,
-                    formattedDuration,
-                    reason,
-                })
-            );
+            const embed = new EmbedBuilder()
+                .setColor('#FF0000') // Color of the embed
+                .setDescription(
+                    t('warn-js_error_message_user', {
+                        moderator: interaction.user.id,
+                        guildname: interaction.guild.name,
+                        formattedDuration,
+                        reason,
+                    })
+                )
+                .setTimestamp();
+
+            await memberToWarn.send({ embeds: [embed] });
         } catch (error) {
             console.error('Ошибка отправки сообщения:', error);
         }
     }
+
 
     try {
         const EmbedWarnUser = new EmbedBuilder()
@@ -635,8 +739,9 @@ async function displaySettings(interaction, config, page = 1) {
         { key: 'uniteAutomodBadLinks', name: i18next.t('settings-js_buttons_name_28'), value: config.uniteAutomodBadLinks === 1 ? '✅' : '❌' },
         { key: 'manRoleName', name: i18next.t('settings-js_buttons_name_29'), value: String(config.manRoleName) },
         { key: 'girlRoleName', name: i18next.t('settings-js_buttons_name_30'), value: String(config.girlRoleName) },
-        { key: 'newMemberRoleName', name: i18next.t('settings-js_buttons_name_31'), value: String(config.newMemberRoleName) },
+        { key: 'newMemberRoleName', name: i18next.t('settings-js_buttons_name_31'), value: String(config.newMemberRoleName) }
     ];
+
 
     const currentPageSettings = settings.slice(start, end);
     currentPageSettings.forEach(setting => {
@@ -688,6 +793,28 @@ async function promptUserForSettingValue(interaction, settingKey) {
         return null;
     }
 }
+// Функция для проверки и создания роли
+async function ensureRolesExist(guild, roleName) {
+    let role = guild.roles.cache.find(r => r.name === roleName);
+
+    if (!role) {
+        try {
+            // Генерируем случайный цвет
+            const randomColor = Math.floor(Math.random() * 16777215); // Генерация случайного числа от 0 до 16777215 (0xFFFFFF)
+
+            role = await guild.roles.create({
+                name: roleName,
+                color: randomColor, // Используем случайный цвет
+                reason: `Создание роли "${roleName}" для новых участников`
+            });
+        } catch (error) {
+            console.error(`Ошибка при создании роли "${roleName}": ${error.message}`);
+            return null; // Возвращаем null, если произошла ошибка
+        }
+    }
+
+    return role;
+}
 
 // Экспортируем функции для использования в других файлах
 module.exports = {
@@ -712,5 +839,9 @@ module.exports = {
     displaySettings,
     createButton,
     promptUserForSettingValue,
-    createRoles
+    createRoles,
+    checkAntiRaidConditions,
+    assignNewMemberRole,
+    ensureRolesExist
+
 };

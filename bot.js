@@ -2,15 +2,15 @@
 require('dotenv').config();
 
 // Импортируем необходимые модули
-const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, EmbedBuilder } = require('discord.js');
+const { Collection, ChannelType, REST, Routes, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const cron = require('node-cron');
-const { initializeDefaultServerSettings, getServerSettings, } = require('./database/settingsDb');
-const { getAllMemberIds, updateMembersInfo,removeStaleMembers } = require('./database/membersDb');
+const { initializeDefaultServerSettings, getServerSettings } = require('./database/settingsDb');
 const { removeExpiredWarnings } = require('./database/warningsDb');
 const { removeExpiredMutes } = require('./database/mutesDb');
-const { initializeI18next, i18next, t } = require('./i18n');
-const { createLogChannel } = require('./events');
+const { initializeI18next, i18next } = require('./i18n');
+const { createLogChannel, assignNewMemberRole, checkAntiRaidConditions } = require('./events');
+
 // Инициализируем массивы для хранения черного списка и плохих ссылок
 let blacklist = [];
 let bad_links = [];
@@ -37,7 +37,7 @@ async function loadBlacklistAndBadLinks() {
 async function initializeLocalizationForServer(guildId) {
   try {
     const serverSettings = await getServerSettings(guildId);
-    const serverLanguage = serverSettings.language;
+    const serverLanguage = serverSettings.language || 'eng'; // Используем 'eng' по умолчанию
     await initializeI18next(serverLanguage);
   } catch (error) {
     console.error('Ошибка при инициализации локализации:', error);
@@ -51,22 +51,32 @@ const rest = new REST().setToken(process.env.TOKEN);
 
 // Загружаем и регистрируем команды
 (async () => {
-  await initializeI18next('eng');
+  await initializeI18next('eng'); // Инициализация с языком по умолчанию
+
   try {
     // Создаем экземпляр клиента Discord
+    const { Client, GatewayIntentBits, Partials } = require('discord.js');
+
     const robot = new Client({
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildMessageTyping,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildScheduledEvents
       ],
       partials: [
         Partials.Message,
         Partials.Channel,
         Partials.Reaction,
         Partials.User,
-      ],
+        Partials.GuildMember,
+        Partials.GuildScheduledEvent
+      ]
     });
 
     robot.commands = new Collection();
@@ -103,65 +113,15 @@ const rest = new REST().setToken(process.env.TOKEN);
 
       // Инициализируем настройки сервера по умолчанию
       await initializeDefaultServerSettings(guild.id);
-
-      // Устанавливаем небольшую задержку перед обновлением данных гильдии
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Задержка перед обновлением данных
 
       const defaultSettings = await getServerSettings(guild.id);
-      // Сохраняем данные гильдии в Map
       guildsData.set(guild.id, defaultSettings);
       console.log(`Данные гильдии инициализированы для ID: ${guild.id}`);
     });
-    // Событие при добавлении нового участника на сервер
-robot.on('guildMemberAdd', async (member) => {
-  try {
-      const serverSettings = await getServerSettings(member.guild.id);
-      const { newMemberRoleName } = serverSettings;
-
-      // Получаем роль "Новичок"
-      let role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
-
-      if (role) {
-          // Выдаем роль пользователю
-          await member.roles.add(role);
-          console.log(`Роль "${newMemberRoleName}" выдана пользователю ${member.user.tag}`);
-      } else {
-          // Если роль не найдена, создаем ее
-          const roleCreationMessages = await ensureRolesExist(member.guild, newMemberRoleName);
-          if (roleCreationMessages) {
-              console.log(roleCreationMessages);
-              // После создания роли снова получаем её и выдаем пользователю
-              role = member.guild.roles.cache.find(r => r.name === newMemberRoleName);
-              if (role) {
-                  await member.roles.add(role);
-                  console.log(`Роль "${newMemberRoleName}" выдана пользователю ${member.user.tag} после создания.`);
-              }
-          }
-      }
-  } catch (error) {
-      console.error(`Ошибка при выдаче роли "${newMemberRoleName}": ${error.message}`);
-  }
-});
-
-// Функция для создания роли, если она не существует
-async function ensureRolesExist(guild, roleName) {
-  try {
-      const roleColor = 0x0000FF; // Задайте нужный цвет в шестнадцатеричном формате
-      const newRole = await guild.roles.create({
-          name: roleName,
-          color: roleColor,
-          permissions: [],
-      });
-      return `Роль "${newRole.name}" была успешно создана!`;
-  } catch (error) {
-      console.error(`Ошибка при создании роли "${roleName}": ${error.message}`);
-      return null;
-  }
-}
-
 
     robot.on('ready', async () => {
-      console.log(`${robot.user.username} готов вкалывать`);
+      console.log(`${robot.user.username} готов к работе`);
       const guilds = robot.guilds.cache;
 
       for (const guild of guilds.values()) {
@@ -169,60 +129,59 @@ async function ensureRolesExist(guild, roleName) {
 
         try {
           let serverSettings = await getServerSettings(guildId);
-
           if (!serverSettings || Object.keys(serverSettings).length === 0) {
             await initializeDefaultServerSettings(guildId);
             serverSettings = await getServerSettings(guildId);
           }
 
           await initializeLocalizationForServer(guildId);
-
           guildsData.set(guildId, serverSettings);
-
         } catch (error) {
           console.error(`Ошибка при обработке сервера ${guildId}:`, error);
         }
       }
 
-      try {
-        await rest.put(
-          Routes.applicationCommands(robot.user.id),
-          { body: commands },
-        );
-
-      } catch (error) {
-        console.error('Ошибка при регистрации команд:', error);
-      }
+      // Запускаем загрузку черного списка и плохих ссылок
+      await loadBlacklistAndBadLinks();
     });
 
     robot.on('interactionCreate', async (interaction) => {
       if (!interaction.isCommand()) return;
 
       const command = robot.commands.get(interaction.commandName);
-
       if (!command) {
-        await interaction.reply({ content: 'Команда не найдена!', ephemeral: true });
+        await interaction.reply({ content: i18next.t('Error'), ephemeral: true });
         return;
       }
 
       try {
         let serverLanguage = 'eng';
-
         if (interaction.guild) {
-          // Получаем настройки сервера для языка
           const guildId = interaction.guild.id;
           const serverSettings = await getServerSettings(guildId);
-          serverLanguage = serverSettings.language || 'rus';
+          serverLanguage = serverSettings.language || 'eng';
         }
 
-        // Обновляем язык для команды
         await initializeI18next(serverLanguage);
-
         console.log(`Выполнение команды: ${interaction.commandName}`);
         await command.execute(robot, interaction);
       } catch (error) {
         console.error('Ошибка при выполнении команды:', error);
-        await interaction.reply({ content: 'Произошла ошибка при выполнении команды!', ephemeral: true });
+        await interaction.reply({ content: i18next.t('Error'), ephemeral: true });
+      }
+    });
+
+    // Событие при добавлении нового участника на сервер
+    robot.on('guildMemberAdd', async (member) => {
+      try {
+        const serverSettings = await getServerSettings(member.guild.id);
+        const { banRoleName, newMemberRoleName, logChannelName, banLogChannelName, banLogChannelNameUse } = serverSettings;
+
+        // Проверяем условия анти-рейда
+        await checkAntiRaidConditions(member, banRoleName, logChannelName, banLogChannelName, banLogChannelNameUse);
+        await assignNewMemberRole(member, newMemberRoleName);
+      } catch (error) {
+        console.error(`Ошибка при обработке нового участника ${member.user.tag}: ${error.message}`);
       }
     });
 
@@ -243,7 +202,6 @@ async function ensureRolesExist(guild, roleName) {
       if (!automod) return;
 
       const NotAutomodChannelsSet = new Set(NotAutomodChannels?.split(',') || []);
-
       if (NotAutomodChannelsSet.has(message.channel.name)) return;
 
       const botMember = await message.guild.members.fetch(robot.user.id);
@@ -253,7 +211,6 @@ async function ensureRolesExist(guild, roleName) {
       if (botMember.roles.highest.position <= authorMember.roles.highest.position) return;
 
       let logChannel = message.guild.channels.cache.find((channel) => channel.name === logChannelName);
-
       if (!logChannel) {
         const channelNameToCreate = logChannelName;
         const higherRoles = [...message.guild.roles.cache.values()].filter((role) => botMember.roles.highest.position < role.position);
@@ -285,13 +242,12 @@ async function ensureRolesExist(guild, roleName) {
       for (const item of [...blacklistToUse, ...bad_linksToUse]) {
         if (mess_value.includes(item)) {
           await message.delete();
-
           const embed = new EmbedBuilder()
             .setTitle(i18next.t('bot-js_delete_message'))
-            .setDescription(i18next.t(`bot-js_delete_${item_type}_logchanel`, { mess_author: message.author.id, item_type: item_type }))
+            .setDescription(i18next.t(`bot-js_delete_item_logchannel`, { mess_author: message.author.id, item: item }))
             .addFields(
               { name: i18next.t('bot-js_delete_message_value', { message_content: message.content }), value: '\u200B' },
-              { name: i18next.t(`bot-js_reason_${item_type}`, { item: item }), value: `${item}` }
+              { name: i18next.t('bot-js_reason', { item: item }), value: `${item}` }
             )
             .setTimestamp();
 
@@ -302,7 +258,7 @@ async function ensureRolesExist(guild, roleName) {
           }
 
           try {
-            await message.author.send(i18next.t(`bot-js_delete_${item_type}_user`, { item: item }));
+            await message.author.send(i18next.t('bot-js_delete_item_user', { item: item }));
           } catch (error) {
             console.error('Ошибка при отправке сообщения пользователю:', error);
           }
@@ -310,59 +266,91 @@ async function ensureRolesExist(guild, roleName) {
           return;
         }
       }
+
+      // Проверка на наличие Discord-ссылок
+      const discordLinkRegex = /(https?:\/\/)?(www\.)?(discord\.gg|discordapp\.com|discord\.com)\/[^\s]+/i;
+      if (discordLinkRegex.test(mess_value)) {
+        await message.delete();
+
+        const embed = new EmbedBuilder()
+          .setTitle(i18next.t('message_deleted'))
+          .setDescription(i18next.t('another_channel_message', { author: message.author.id }))
+          .addFields(
+            { name: i18next.t('delete_message_content'), value: message.content, inline: false },
+            { name: i18next.t('ban-js_reason'), value: i18next.t('delete_message_content_reason'), inline: false }
+          )
+          .setTimestamp();
+
+        try {
+          await logChannel.send({ embeds: [embed] });
+        } catch (error) {
+          console.error('Ошибка при отправке сообщения в канал журнала:', error);
+        }
+
+        try {
+          await message.author.send(i18next.t('another_channel_user_message'));
+        } catch (error) {
+          console.error('Ошибка при отправке сообщения пользователю:', error);
+        }
+        return; // Добавляем return, чтобы не продолжать проверку
+      }
     });
 
-
-    function setupCronJobs() {
+    function setupCronJobs(robot) {
       cron.schedule('*/2 * * * *', async () => {
-          console.log('Запуск задачи по расписанию для удаления истекших предупреждений и мутов.');
-          let hasExpiredRecords = false; // Флаг для отслеживания наличия устаревших записей
-  
-          for (const guild of robot.guilds.cache.values()) {
-              const guildId = guild.id;
-              try {
-                  // Получаем настройки сервера
-                  const serverSettings = await getServerSettings(guildId);
-  
-                  // Получаем ID всех участников
-                  const memberIds = await getAllMemberIds(guild);
-  
-                  // Обновляем информацию об участниках
-                  await updateMembersInfo(robot, guildId, memberIds);
-  
-                  // Удаление истекших предупреждений и мутов
-                  await removeExpiredWarnings(robot, guildId, serverSettings, memberIds);
-                  await removeExpiredMutes(robot, guildId);
-  
-                  // Удаление устаревших участников
-                  const staleMembersRemoved = await removeStaleMembers(guild);
-                  if (staleMembersRemoved > 0) {
-                      hasExpiredRecords = true; 
-                  }
-              } catch (error) {
-                  console.error(`Ошибка при обработке сервера ${guildId}:`, error);
-              }
+        console.log('Запуск задачи по расписанию для проверки');
+
+        try {
+          // Проверяем, инициализирован ли объект robot и доступны ли guilds
+          if (!robot || !robot.guilds) {
+            console.log('Объект robot не инициализирован или guilds недоступны.');
+            return;
           }
-      });
-  }
-  
 
-    setupCronJobs();
-    robot.login(process.env.TOKEN);
-    loadBlacklistAndBadLinks();
-  } catch (error) {
-    console.error('Произошла непредвиденная ошибка:', error);
-    console.error('Перезапуск бота...');
+          // Проверяем, есть ли доступные гильдии
+          if (robot.guilds.cache.size === 0) {
+            console.log('Нет доступных серверов для обработки.');
+            return;
+          }
 
-    // Перезапуск бота
-    setTimeout(() => {
-      require('child_process').exec('npm run start', (error, stdout, stderr) => {
-        if (error) {
-          console.error('Ошибка при перезапуске бота:', error);
-        } else {
-          console.log('Бот успешно перезапущен.');
+          for (const guild of robot.guilds.cache.values()) {
+
+
+            try {
+
+              // Получаем настройки сервера
+              const serverSettings = await getServerSettings(guild.id);
+              const { newMemberRoleName } = serverSettings;
+
+              // Проверяем участников на наличие ролей и назначаем роль новичка
+              const members = await guild.members.fetch();
+
+              for (const [memberId, member] of members) {
+                if (member.roles.cache.size === 0) {
+                  await assignNewMemberRole(member, newMemberRoleName);
+                  console.log(`Роль новичка назначена участнику ${member.user.tag} на сервере ${guild.name}`);
+                }
+              }
+
+              // Удаление истекших предупреждений и мутов
+              await removeExpiredWarnings(robot, guild.id, serverSettings);
+              await removeExpiredMutes(robot, guild.id);
+
+            } catch (error) {
+              console.error(`Ошибка при обработке сервера ${guild.id}:`, error);
+            }
+          }
+        } catch (error) {
+          console.error(`Ошибка при запуске задачи cron:`, error);
         }
       });
-    }, 3000); // Ждем 3 секунды перед перезапуском бота, чтобы избежать бесконечного цикла
+    }
+
+
+    setupCronJobs(robot);
+    robot.login(process.env.TOKEN);
+  } catch (error) {
+    console.error('Ошибка при инициализации бота:', error);
   }
-})();
+})
+  ();

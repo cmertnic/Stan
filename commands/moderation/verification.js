@@ -42,7 +42,7 @@ module.exports = {
             const memberToVerify = await interaction.guild.members.fetch(userIdToVerify);
 
             if (!memberToVerify) {
-                return await interaction.editReply({ content: i18next.t('User _not_found'), ephemeral: true });
+                return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
             }
 
             // Получение настроек сервера
@@ -91,14 +91,12 @@ module.exports = {
                         const rookieRole = interaction.guild.roles.cache.find(role => role.name === newMemberRoleName);
                         if (rookieRole && memberToVerify.roles.cache.has(rookieRole.id)) {
                             await memberToVerify.roles.remove(rookieRole);
-                            console.log(`Роль "Новичок" была удалена у пользователя ${userIdToVerify}.`);
                         }
 
                         // Отправка личного сообщения пользователю
                         try {
                             await memberToVerify.send(i18next.t('verify-js_role_assigned_message', { rolename: roleToAssign.name, moderator: interaction.user.id }));
-                        } catch (error) {
-                            console.error(`Не удалось отправить личное сообщение пользователю: ${error.message}`);
+                        } catch {
                         }
 
                         // Создание embed для лога в канале логов
@@ -149,7 +147,7 @@ module.exports = {
                         const genderChangeEmbedMale = new EmbedBuilder()
                             .setColor(0xFFFF00)
                             .setTitle(i18next.t('verify-js_gender_changed_log_title'))
-                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: 'Мужской' }))
+                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: manRoleName }))
                             .setTimestamp()
                             .setFooter({ text: i18next.t('verify-js_log_footer', { moderator: interaction.user.tag }) });
 
@@ -164,7 +162,7 @@ module.exports = {
                         const genderChangeEmbedFemale = new EmbedBuilder()
                             .setColor(0xFFFF00)
                             .setTitle(i18next.t('verify-js_gender_changed_log_title'))
-                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: 'Женский' }))
+                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: girlRoleName }))
                             .setTimestamp()
                             .setFooter({ text: i18next.t('verify-js_log_footer', { moderator: interaction.user.tag }) });
 

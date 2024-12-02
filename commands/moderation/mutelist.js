@@ -1,4 +1,5 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, SlashCommandBuilder } = require('discord.js');
+// Импорт необходимых модулей и функций
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { i18next, t } = require('../../i18n');
 const { getAllActiveMutes } = require('../../database/mutesDb');
 const { formatDuration } = require('../../events');
@@ -14,18 +15,17 @@ module.exports = {
    * @param {import("discord.js").CommandInteraction} interaction - объект взаимодействия с ботом
    */
   async execute(robot, interaction) {
-    if (interaction.user.bot) return;
-    if (interaction.channel.type === ChannelType.DM) {
-      return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
-    }
-    // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-    await interaction.deferReply({ ephemeral: true });
     const commandCooldown = userCommandCooldowns.get(interaction.user.id);
     if (commandCooldown && commandCooldown.command === 'mutelist' && Date.now() < commandCooldown.endsAt) {
       const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
       return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
     }
     try {
+      // Проверка, что пользователь не бот
+      if (interaction.user.bot) return;
+      if (interaction.channel.type === ChannelType.DM) {
+        return await interaction.editReply({ content: i18next.t('error_private_messages'), ephemeral: true });
+      }
 
       const { member, guild } = interaction;
 
@@ -40,8 +40,8 @@ module.exports = {
         return;
       }
 
-      //Получение активных мутов
-      const mutes = await getAllActiveMutes();
+      // Получение активных мутов
+      const mutes = await getAllActiveMutes(guild.id);
 
       // Проверка, что есть активные муты
       if (mutes.length === 0) {
