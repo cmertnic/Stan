@@ -57,7 +57,7 @@ module.exports = {
       // Получаем настройки сервера для текущей гильдии
       const serverSettings = await getServerSettings(guild.id);
       const logChannelName = serverSettings.logChannelName;
-      const banLogChannelName = serverSettings.banLogName;
+      const banLogChannelName = serverSettings.banLogChannelName;
       const banLogChannelNameUse = serverSettings.banLogChannelNameUse;
       const deletingMessagesFromBannedUsers = serverSettings.deletingMessagesFromBannedUsers;
       const moderator = interaction.user;
@@ -85,14 +85,17 @@ module.exports = {
       // Если канал логирования не существует, создаем его
       if (!logChannel) {
         const channelNameToCreate = banLogChannelNameUse ? banLogChannelName : logChannelName;
-        const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, guild.members.cache.get(robot.user.id), guild.roles.cache.filter(role => role.comparePositionTo(guild.members.cache.get(robot.user.id).roles.highest) > 0), serverSettings);
+        const roles = interaction.guild.roles.cache;
+        const higherRoles = roles.filter(role => botMember.roles.highest.comparePositionTo(role) < 0);
+        const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
+        // Выход из функции, если произошла ошибка при создании канала
         if (logChannelCreationResult.startsWith('Ошибка')) {
           return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
         }
 
-        // Обновляем переменную logChannel созданного канала
-        logChannel = guild.channels.cache.find(ch => ch.name === channelNameToCreate);
+        // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
+        logChannel = interaction.guild.channels.cache.find(ch => ch.name === channelNameToCreate);
       }
 
       // Баним пользователя с указанной причиной и удаляем его сообщения, если это разрешено

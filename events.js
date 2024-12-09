@@ -51,25 +51,6 @@ async function checkAntiRaidConditions(member, banRoleName, logChannelName, banL
         logChannel = guild.channels.cache.find(ch => ch.name === logChannelName);
     }
 
-    const now = Date.now();
-    const joinTime = now; // Время, когда пользователь присоединился
-    recentJoins.set(member.id, joinTime); // Сохраняем время присоединения
-
-    // Условие 1: Если на сервер заходит 25 человек за 2 минуты
-    const twoMinutesAgo = now - 2 * 60 * 1000; // Время 2 минуты назад
-    const recentMembers = [...recentJoins.entries()].filter(([id, time]) => time >= twoMinutesAgo);
-
-    if (recentMembers.length >= 25) {
-        const role = guild.roles.cache.find(r => r.name === banRoleName);
-        if (role) {
-            await member.roles.add(role);
-            // Логируем назначение роли
-            if (logChannel) {
-                await logChannel.send(`Пользователю ${member.user.tag} была назначена роль "${banRoleName}" из-за рейда (25 участников за 2 минуты).`);
-            }
-        }
-    }
-
     // Условие 2: Если аккаунту пользователя меньше 30 минут
     const accountAge = (now - member.user.createdTimestamp) / 1000 / 60; // Возраст аккаунта в минутах
     if (accountAge < 30) {
