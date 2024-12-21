@@ -43,6 +43,7 @@ module.exports = {
 
             if (!memberToVerify) {
                 return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
+                return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
             }
 
             // Получение настроек сервера
@@ -148,6 +149,7 @@ module.exports = {
                             .setColor(0xFFFF00)
                             .setTitle(i18next.t('verify-js_gender_changed_log_title'))
                             .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: manRoleName }))
+                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: manRoleName }))
                             .setTimestamp()
                             .setFooter({ text: i18next.t('verify-js_log_footer', { moderator: interaction.user.tag }) });
 
@@ -162,6 +164,7 @@ module.exports = {
                         const genderChangeEmbedFemale = new EmbedBuilder()
                             .setColor(0xFFFF00)
                             .setTitle(i18next.t('verify-js_gender_changed_log_title'))
+                            .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: girlRoleName }))
                             .setDescription(i18next.t('verify-js_gender_changed_log', { member: memberToVerify.id, gender: girlRoleName }))
                             .setTimestamp()
                             .setFooter({ text: i18next.t('verify-js_log_footer', { moderator: interaction.user.tag }) });
