@@ -232,6 +232,7 @@
     "settings-js_buttons_name_29": "male role name",
     "settings-js_buttons_name_30": "female role name",
     "settings-js_buttons_name_31": "newcomer role name",
+    "settings-js_buttons_name_32": "give role to newbies",
     "settings-js_enter_new_value": "enter a new value for setting {{settingKey}}:",
     "settings-js_times_is_up": "the timeout expired or an error occurred. Try again.",
     "settings-js_description": "settings",

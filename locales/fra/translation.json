@@ -232,6 +232,7 @@
     "settings-js_buttons_name_29": "nom du rôle masculin",
     "settings-js_buttons_name_30": "nom du rôle féminin",
     "settings-js_buttons_name_31": "nom du rôle du nouveau venu",
+    "settings-js_buttons_name_32": "donner un rôle aux débutants",
     "settings-js_enter_new_value": "Entrez une nouvelle valeur pour le paramètre {{settingKey}} :",
     "settings-js_times_is_up": "Le délai a expiré ou une erreur s'est produite. Réessayez.",
     "settings-js_description": "paramètres",

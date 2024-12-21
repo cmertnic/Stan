@@ -232,6 +232,7 @@
     "settings-js_buttons_name_29": "男性角色名称",
     "settings-js_buttons_name_30": "女性角色名称",
     "settings-js_buttons_name_31": "新人角色名称",
+    "settings-js_buttons_name_32": "给新手角色",
     "settings-js_enter_new_value": "输入新的设置值 {{settingKey}}:",
     "settings-js_times_is_up": "超时或发生错误。请重试。",
     "settings-js_description": "设置",

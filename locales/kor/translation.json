@@ -231,6 +231,7 @@
     "settings-js_buttons_name_29": "남성 역할 이름",
     "settings-js_buttons_name_30": "여성 역할 이름",
     "settings-js_buttons_name_31": "새로 온 역할 이름",
+    "settings-js_buttons_name_32": "초보자에게 역할 부여",
     "settings-js_enter_new_value": "{{settingKey}} 설정을 위한 새 값을 입력하세요:",
     "settings-js_times_is_up": "시간이 초과되었거나 오류가 발생했습니다. 다시 시도하세요.",
     "settings-js_description": "설정",

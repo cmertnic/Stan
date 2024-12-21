@@ -175,11 +175,17 @@ const rest = new REST().setToken(process.env.TOKEN);
     robot.on('guildMemberAdd', async (member) => {
       try {
         const serverSettings = await getServerSettings(member.guild.id);
-        const { banRoleName, newMemberRoleName, logChannelName, banLogChannelName, banLogChannelNameUse } = serverSettings;
+        const { banRoleName,automod, newMemberRoleName, newMemberRoleNameUse, logChannelName, banLogChannelName, banLogChannelNameUse } = serverSettings;
 
         // Проверяем условия анти-рейда
-        await checkAntiRaidConditions(member, banRoleName, logChannelName, banLogChannelName, banLogChannelNameUse);
-        await assignNewMemberRole(member, newMemberRoleName);
+        if (automod){
+        await checkAntiRaidConditions(member, banRoleName, logChannelName, banLogChannelName, banLogChannelNameUse);          
+        }
+
+        if (newMemberRoleNameUse) {
+          await assignNewMemberRole(member, newMemberRoleName);
+        }
+
       } catch (error) {
         console.error(`Ошибка при обработке нового участника ${member.user.tag}: ${error.message}`);
       }

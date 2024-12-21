@@ -232,6 +232,7 @@
     "settings-js_buttons_name_29": "男性ロール名",
     "settings-js_buttons_name_30": "女性ロール名",
     "settings-js_buttons_name_31": "新人ロール名",
+    "settings-js_buttons_name_32": "初心者に役割を与える",
     "settings-js_enter_new_value": "設定 {{settingKey}} の新しい値を入力してください:",
     "settings-js_times_is_up": "タイムアウトしたか、エラーが発生しました。もう一度お試しください。",
     "settings-js_description": "設定",

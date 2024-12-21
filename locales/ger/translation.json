@@ -232,6 +232,7 @@
   "settings-js_buttons_name_29": "männlicher Rollenname",
   "settings-js_buttons_name_30": "Name der weiblichen Rolle",
   "settings-js_buttons_name_31": "Neulingsrollenname",
+  "settings-js_buttons_name_32": "Neulingen eine Rolle geben",
   "settings-js_enter_new_value": "Geben Sie einen neuen Wert für die Einstellung {{settingKey}}: ein",
   "settings-js_times_is_up": "Zeitüberschreitung oder ein Fehler ist aufgetreten. Versuchen Sie es erneut.",
   "settings-js_description": "Einstellungen",

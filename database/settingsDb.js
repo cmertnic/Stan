@@ -57,7 +57,8 @@ db.run(`CREATE TABLE IF NOT EXISTS server_settings (
     uniteAutomodBadLinks BOOLEAN,
     manRoleName TEXT,
     girlRoleName TEXT,
-    newMemberRoleName TEXT
+    newMemberRoleName TEXT,
+    newMemberRoleNameUse BOOLEAN
 );`, (err) => {
   if (err) {
     console.error(`Ошибка при создании таблицы server_settings: ${err.message}`);
@@ -94,22 +95,22 @@ function saveServerSettings(guildId, settings) {
       banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName,
       kickLogChannelNameUse, reportLogChannelName, reportLogChannelNameUse, clearLogChannelName,
       clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels,
-      automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
+      automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName,newMemberRoleNameUse
     } = settings;
 
     db.run(`REPLACE INTO server_settings
         (guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice, warningLogChannelName, warningLogChannelNameUse, warningDuration,
         maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
         reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language,
-        automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName,newMemberRoleNameUse )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
       [
         guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice,
         warningLogChannelName, warningLogChannelNameUse, warningDuration, maxWarnings, warningsNotice,
         banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName,
         kickLogChannelNameUse, reportLogChannelName, reportLogChannelNameUse, clearLogChannelName,
         clearLogChannelNameUse, clearNotice, logChannelName, language, automod, NotAutomodChannels,
-        automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName
+        automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName,newMemberRoleNameUse
       ], (err) => {
         if (err) {
           console.error(`Ошибка при сохранении настроек сервера: ${err.message}`);
@@ -173,6 +174,7 @@ async function initializeDefaultServerSettings(guildId, allGuildIds) {
         manRoleName: process.env.MANROLENAME || '♂',
         girlRoleName: process.env.GIRLROLENAME || '♀',
         newMemberRoleName: process.env.NEWMEMBERROLENAME || 'NewMember',
+        newMemberRoleNameUse: process.env.NEWMEMBERROLENAMEUSE === '0' ? false : true,
       };
       await saveServerSettings(guildId, defaultSettings);
       console.log(`Настройки по умолчанию инициализированы для сервера: ${guildId}`);

@@ -231,6 +231,7 @@
     "settings-js_buttons_name_29": "nombre del rol masculino",
     "settings-js_buttons_name_30": "nombre del rol femenino",
     "settings-js_buttons_name_31": "nombre del rol del recién llegado",
+    "settings-js_buttons_name_32": "dar rol a los novatos",
     "settings-js_enter_new_value": "Ingrese un nuevo valor para la configuración {{settingKey}}:",
     "settings-js_times_is_up": "Se agotó el tiempo de espera o se produjo un error. Inténtalo de nuevo.",
     "settings-js_description": "configuración",

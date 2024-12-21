@@ -233,6 +233,7 @@
     "settings-js_buttons_name_29": "имя мужской роли",
     "settings-js_buttons_name_30": "имя женской роли",
     "settings-js_buttons_name_31": "имя роли новоприбывшего",
+    "settings-js_buttons_name_32": "выдавать роль новичкам",
     "settings-js_enter_new_value": "введите новое значение для настройки {{settingKey}}:",
     "settings-js_times_is_up": "время ожидания истекло или произошла ошибка. Попробуйте снова.",
     "settings-js_description": "настройки",

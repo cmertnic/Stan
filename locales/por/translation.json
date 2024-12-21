@@ -232,6 +232,7 @@
     "settings-js_buttons_name_29": "nome do papel masculino",
     "settings-js_buttons_name_30": "nome da função feminina",
     "settings-js_buttons_name_31": "nome da função do novato",
+    "settings-js_buttons_name_32": "dar função aos novatos",
     "settings-js_enter_new_value": "Insira um novo valor para a configuração {{settingKey}}:",
     "settings-js_times_is_up": "Tempo limite esgotado ou ocorreu um erro. Tente novamente.",
     "settings-js_description": "configurações",
