@@ -17,7 +17,7 @@ module.exports = {
         const commandCooldown = userCommandCooldowns.get(interaction.user.id);
         if (commandCooldown && commandCooldown.command === 'help' && Date.now() < commandCooldown.endsAt) {
             const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-            return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), ephemeral: true });
+            return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), flags: 64  });
         }
 
         // Создаем embed для главной страницы помощи
@@ -94,7 +94,7 @@ module.exports = {
             ]);
 
         // Отправляем главное embed с кнопками
-        await interaction.reply({ embeds: [mainEmbed], components: [row], ephemeral: true });
+        await interaction.reply({ embeds: [mainEmbed], components: [row], flags: 64  });
 
         // Устанавливаем кулдаун для команды
         userCommandCooldowns.set(interaction.user.id, { command: 'help', endsAt: Date.now() + 300200 });

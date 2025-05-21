@@ -20,15 +20,15 @@ module.exports = {
         try {
             if (interaction.user.bot) return;
             if (interaction.channel.type === ChannelType.DM) {
-                return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+                return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
               }
 
-            await interaction.reply({ content: 'loading...', ephemeral: true });
+            await interaction.reply({ content: 'loading...', flags: 64  });
 
             const member = interaction.member;
             if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 responseMessage += `❌ ${i18next.t('ModerateMembers_user_check')}\n`;
-                await interaction.followUp({ content: responseMessage, ephemeral: true });
+                await interaction.followUp({ content: responseMessage, flags: 64  });
                 return;
             }
 
@@ -36,7 +36,7 @@ module.exports = {
             const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
             if (!botMember) {
                 responseMessage += `❌ ${i18next.t('error_bot_member')}\n`;
-                await interaction.followUp({ content: responseMessage, ephemeral: true });
+                await interaction.followUp({ content: responseMessage, flags: 64  });
                 return;
             }
 
@@ -45,13 +45,13 @@ module.exports = {
 
             if (!botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 responseMessage += `❌ ${i18next.t('ModerateMembers_bot_check')}\n`;
-                await interaction.followUp({ content: responseMessage, ephemeral: true });
+                await interaction.followUp({ content: responseMessage, flags: 64  });
                 return;
             }
 
             if (interaction.member.roles.highest.comparePositionTo(botMember.roles.highest) <= 0) {
                 responseMessage += `❌ ${i18next.t('error_highest_bot_role')}\n`;
-                await interaction.followUp({ content: responseMessage, ephemeral: true });
+                await interaction.followUp({ content: responseMessage, flags: 64  });
                 return;
             }
 
@@ -76,10 +76,10 @@ module.exports = {
             const mutedRoleMessage = await createMutedRole(interaction, serverSettings);
             responseMessage += `${mutedRoleMessage}\n`;
 
-            await interaction.followUp({ content: responseMessage + `✅ ${i18next.t('test-js_sucess')}`, ephemeral: true });
+            await interaction.followUp({ content: responseMessage + `✅ ${i18next.t('test-js_sucess')}`, flags: 64  });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: `❌ ${i18next.t('Error')}`, ephemeral: true });
+            return interaction.editReply({ content: `❌ ${i18next.t('Error')}`, flags: 64  });
         }
     }
 };

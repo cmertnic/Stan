@@ -28,13 +28,13 @@ module.exports = {
      */
     async execute(robot, interaction) {
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
 
         try {
             // Предварительные проверки
             if (interaction.user.bot) return;
             if (interaction.channel.type === ChannelType.DM) {
-                return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+                return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
               }
 
             // Получение настроек сервера
@@ -51,7 +51,7 @@ module.exports = {
 
             // Проверка existence пользователя
             if (!memberToUnmute) {
-                return interaction.editReply({ content: i18next.t('unmute-js_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('unmute-js_user_check'), flags: 64  });
             }
 
             // Находим роль для мута и канал для логов
@@ -71,7 +71,7 @@ module.exports = {
                 const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                 }
 
                 logChannel = interaction.guild.channels.cache.find(ch => ch.name === channelNameToCreate);
@@ -79,18 +79,18 @@ module.exports = {
 
             // Проверка existence роли для мута и канала для логов
             if (!mutedRole || !logChannel) {
-                return interaction.editReply({ content: i18next.t('unmute-js_checks_failed'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('unmute-js_checks_failed'), flags: 64  });
             }
 
             // Получаем члена бота и проверяем его разрешения
             const botMember = interaction.guild.members.me;
             if (!botMember.permissions.has('ModerateMembers') || botMember.roles.highest.comparePositionTo(memberToUnmute.roles.highest) <= 0) {
-                return interaction.editReply({ content: i18next.t('unmute-js_bot_permissions'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('unmute-js_bot_permissions'), flags: 64  });
             }
 
             // Проверка, находится ли пользователь в роли для мута
             if (!memberToUnmute.roles.cache.has(mutedRole.id)) {
-                return interaction.editReply({ content: i18next.t('unmute-js_user_not_muted'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('unmute-js_user_not_muted'), flags: 64  });
             }
 
             // Удаление роли для мута у пользователя
@@ -119,10 +119,10 @@ module.exports = {
                 }
             }
             // Отправка ответа в чат с результатом unmute
-            await interaction.editReply({ content: i18next.t('unmute-js_unban_user_log_moderator', { memberToUnmute: memberToUnmute, reason: reason }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('unmute-js_unban_user_log_moderator', { memberToUnmute: memberToUnmute, reason: reason }), flags: 64  });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
     }
 

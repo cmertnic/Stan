@@ -29,15 +29,15 @@ module.exports = {
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
           }
         const commandCooldown = userCommandCooldowns.get(interaction.user.id);
         if (commandCooldown && commandCooldown.command === 'report' && Date.now() < commandCooldown.endsAt) {
           const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-          return interaction.reply({ content: i18next.t(`cooldown`, { timeLeft: timeLeft}), ephemeral: true });
+          return interaction.reply({ content: i18next.t(`cooldown`, { timeLeft: timeLeft}), flags: 64  });
         }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         try {
 
             // Получение настроек сервера
@@ -64,7 +64,7 @@ module.exports = {
 
                 // Выход из функции, если произошла ошибка при создании канала
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                 }
 
                 // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -75,7 +75,7 @@ module.exports = {
             const userIdOrMention = interaction.options.getUser(USER_OPTION_NAME).id;
             const memberToReport = await interaction.guild.members.fetch(userIdOrMention).catch(() => null);
             if (!memberToReport) {
-                return interaction.editReply({ content: i18next.t('repot-js_user_search_error'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('repot-js_user_search_error'), flags: 64  });
             }
 
             // Определение причины жалобы
@@ -91,16 +91,16 @@ module.exports = {
             
             await logChannel.send({ embeds: [EmbedReportUser] });
             } catch (error) {
-                return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), ephemeral: true });
+                return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), flags: 64  });
             }
             userCommandCooldowns.set(interaction.user.id, { command: 'report', endsAt: Date.now() + 30000 });
             // Отправка сообщения о завершении выполнения команды
             await interaction.editReply({
-                content: i18next.t(`report-js_user_log_moderator`, { reportmember: memberToReport.id, reason: reason }), ephemeral: true 
+                content: i18next.t(`report-js_user_log_moderator`, { reportmember: memberToReport.id, reason: reason }), flags: 64  
             });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
         setTimeout(() => {
             userCommandCooldowns.delete(interaction.user.id);

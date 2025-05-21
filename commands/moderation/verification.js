@@ -32,9 +32,9 @@ module.exports = {
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
         }
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
 
         try {
             const userIdToVerify = interaction.options.getUser ('user').id;
@@ -42,8 +42,8 @@ module.exports = {
             const memberToVerify = await interaction.guild.members.fetch(userIdToVerify);
 
             if (!memberToVerify) {
-                return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
-                return await interaction.editReply({ content: i18next.t('User_not_found'), ephemeral: true });
+                return await interaction.editReply({ content: i18next.t('User_not_found'), flags: 64  });
+                return await interaction.editReply({ content: i18next.t('User_not_found'), flags: 64  });
             }
 
             // Получение настроек сервера
@@ -59,13 +59,13 @@ module.exports = {
                 console.log(channelCreationMessage);
                 logChannel = interaction.guild.channels.cache.find(ch => ch.name === logChannelName);
                 if (!logChannel) {
-                    return await interaction.editReply({ content: 'Не удалось создать или найти канал логов.', ephemeral: true });
+                    return await interaction.editReply({ content: 'Не удалось создать или найти канал логов.', flags: 64  });
                 }
             }
 
             // Проверка прав на отправку сообщений
             if (!logChannel.permissionsFor(botMember).has('SEND_MESSAGES')) {
-                return await interaction.editReply({ content: 'У бота нет прав на отправку сообщений в канал логов.', ephemeral: true });
+                return await interaction.editReply({ content: 'У бота нет прав на отправку сообщений в канал логов.', flags: 64  });
             }
 
             switch (action) {
@@ -76,17 +76,17 @@ module.exports = {
                     } else if (gender === 'female') {
                         roleToAssign = interaction.guild.roles.cache.find(role => role.name === girlRoleName);
                     } else {
-                        return await interaction.editReply({ content: i18next.t('verify-js_gender_not_found'), ephemeral: true });
+                        return await interaction.editReply({ content: i18next.t('verify-js_gender_not_found'), flags: 64  });
                     }
 
                     if (roleToAssign) {
                         // Проверяем, есть ли уже у пользователя эта роль
                         if (memberToVerify.roles.cache.has(roleToAssign.id)) {
-                            return await interaction.editReply({ content: i18next.t('verify-js_role_already_declared', { rolename: roleToAssign.name }), ephemeral: true });
+                            return await interaction.editReply({ content: i18next.t('verify-js_role_already_declared', { rolename: roleToAssign.name }), flags: 64  });
                         }
 
                         await memberToVerify.roles.add(roleToAssign);
-                        await interaction.editReply({ content: i18next.t('verify-js_role_add', { rolename: roleToAssign.name, userIdToVerify: userIdToVerify }), ephemeral: true });
+                        await interaction.editReply({ content: i18next.t('verify-js_role_add', { rolename: roleToAssign.name, userIdToVerify: userIdToVerify }), flags: 64  });
 
                         // Убираем роль "Новичок", если она есть
                         const rookieRole = interaction.guild.roles.cache.find(role => role.name === newMemberRoleName);
@@ -111,7 +111,7 @@ module.exports = {
                         // Отправка embed в канал логов
                         await logChannel.send({ embeds: [genderSelectEmbed] });
                     } else {
-                        await interaction.editReply({ content: 'Роль не найдена.', ephemeral: true });
+                        await interaction.editReply({ content: 'Роль не найдена.', flags: 64  });
                     }
                     break;
 
@@ -119,9 +119,9 @@ module.exports = {
                     const reason = 'Non-admission';
                     await memberToVerify.ban({ reason }).catch(error => {
                         console.error(`Ошибка при бане пользователя: ${error.message}`);
-                        return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+                        return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
                     });
-                    await interaction.editReply({ content: i18next.t('verify-js_user_banned_log', { member: memberToVerify.id, reason }), ephemeral: true });
+                    await interaction.editReply({ content: i18next.t('verify-js_user_banned_log', { member: memberToVerify.id, reason }), flags: 64  });
 
                     // Создание embed для лога в канале логов
                     const banEmbed = new EmbedBuilder()
@@ -142,7 +142,7 @@ module.exports = {
                     if (gender === 'male' && femaleRole && memberToVerify.roles.cache.has(femaleRole.id)) {
                         await memberToVerify.roles.remove(femaleRole);
                         await memberToVerify.roles.add(maleRole);
-                        await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), ephemeral: true });
+                        await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), flags: 64  });
 
                         // Создание embed для лога в канале логов
                         const genderChangeEmbedMale = new EmbedBuilder()
@@ -158,7 +158,7 @@ module.exports = {
                     } else if (gender === 'female' && maleRole && memberToVerify.roles.cache.has(maleRole.id)) {
                         await memberToVerify.roles.remove(maleRole);
                         await memberToVerify.roles.add(femaleRole);
-                        await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), ephemeral: true });
+                        await interaction.editReply({ content: i18next.t('verify-js_gender_changed_log_title'), flags: 64  });
 
                         // Создание embed для лога в канале логов
                         const genderChangeEmbedFemale = new EmbedBuilder()
@@ -172,16 +172,16 @@ module.exports = {
                         // Отправка embed в канал логов
                         await logChannel.send({ embeds: [genderChangeEmbedFemale] });
                     } else {
-                        await interaction.editReply({ content: i18next.t('verify-js_no_roles'), ephemeral: true });
+                        await interaction.editReply({ content: i18next.t('verify-js_no_roles'), flags: 64  });
                     }
                     break;
 
                 default:
-                    await interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+                    await interaction.editReply({ content: i18next.t('Error'), flags: 64  });
             }
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return await interaction.editReply({ content: `Произошла ошибка: ${error.message}`, ephemeral: true });
+            return await interaction.editReply({ content: `Произошла ошибка: ${error.message}`, flags: 64  });
         }
     },
 };

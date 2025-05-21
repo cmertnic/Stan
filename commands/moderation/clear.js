@@ -24,17 +24,17 @@ module.exports = {
      */
     async execute(robot, interaction) {
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         const guild = interaction.guild;
         // Предварительные проверки
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
         }
         // Проверка прав пользователя
         const member = interaction.member;
         if (member && !member.permissions.has('ModerateMembers')) {
-            await interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
             isClearing[interaction.guild.id] = false;
             return;
         }
@@ -42,7 +42,7 @@ module.exports = {
         const amountString = interaction.options.getString(AMOUNT_OPTION_NAME);
         const amount = parseInt(amountString, 10);
         if (!amount || isNaN(amount) || amount < 1) {
-            await interaction.editReply({ content: i18next.t('clear-js_amount_to_delete'), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('clear-js_amount_to_delete'), flags: 64  });
             isClearing[interaction.guild.id] = false;
             return;
         }
@@ -64,12 +64,12 @@ module.exports = {
             // Получение участника бота
             const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
             if (!botMember) {
-                return interaction.editReply({ content: i18next.t('error_bot_member'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('error_bot_member'), flags: 64  });
             }
 
             // Проверка наличия полномочий у бота для управления сообщениями
             if (!botMember.permissions.has('ModerateMembers')) {
-                await interaction.reply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                await interaction.reply({ content: i18next.t('ModerateMembers_bot_check'), flags: 64  });
                 isClearing[interaction.guild.id] = false;
                 return;
             }
@@ -88,7 +88,7 @@ module.exports = {
                         deletedCount += deleted.size;
                     } else {
                         // Если нет сообщений для удаления, отправляем уведомление и прерываем цикл
-                        await interaction.editReply({ content: i18next.t('error_not_found_new_messages'), ephemeral: true });
+                        await interaction.editReply({ content: i18next.t('error_not_found_new_messages'), flags: 64  });
                         break;
                     }
 
@@ -100,7 +100,7 @@ module.exports = {
                     }
                 } catch (error) {
                     console.error('Произошла ошибка при удалении сообщений:', error);
-                    await interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+                    await interaction.editReply({ content: i18next.t('Error'), flags: 64  });
                     break;
                 }
             }
@@ -125,7 +125,7 @@ module.exports = {
                     const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
                     if (logChannelCreationResult.startsWith('Ошибка')) {
-                        await interaction.followUp({ content: logChannelCreationResult, ephemeral: true });
+                        await interaction.followUp({ content: logChannelCreationResult, flags: 64  });
                     }
 
                     // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -154,11 +154,11 @@ module.exports = {
             }
 
             // Отправка сообщения о завершении очистки
-            await interaction.editReply({ content: i18next.t('clear-js_deletedWords_moderator'), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('clear-js_deletedWords_moderator'), flags: 64  });
 
             try {
                 if (!interaction.replied && !interaction.deferred) {
-                    await interaction.editReply({ content: i18next.t('clear-js_deletedWords_moderator'), ephemeral: true });
+                    await interaction.editReply({ content: i18next.t('clear-js_deletedWords_moderator'), flags: 64  });
                 }
             } catch (error) {
                 console.error('Error sending reply:', error);
@@ -170,7 +170,7 @@ module.exports = {
             if (error instanceof DiscordAPIError && error.code === 10008) {
                 errorMessage = i18next.t('error_not_found_messages_to_delete');
             }
-            await interaction.editReply({ content: errorMessage, ephemeral: true });
+            await interaction.editReply({ content: errorMessage, flags: 64  });
         } finally {
             isClearing[interaction.guild.id] = false;
         }

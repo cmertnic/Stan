@@ -384,7 +384,7 @@ async function notifyUserAndLogMute(interaction, memberToMute, botMember, reason
         const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
         if (logChannelCreationResult.startsWith('Ошибка')) {
-            return interaction.reply({ content: logChannelCreationResult, ephemeral: true });
+            return interaction.reply({ content: logChannelCreationResult, flags: 64 });
         }
 
         logChannel = interaction.guild.channels.cache.find(ch => ch.name === channelNameToCreate);
@@ -423,10 +423,10 @@ async function notifyUserAndLogMute(interaction, memberToMute, botMember, reason
 
             await logChannel.send({ embeds: [EmbedMuteUser] });
         } catch (error) {
-            return interaction.reply({ content: i18next.t('Error_log', { error }), ephemeral: true });
+            return interaction.reply({ content: i18next.t('Error_log', { error }), flags: 64 });
         }
     } else {
-        await interaction.reply({ content: i18next.t('Error_search_log'), ephemeral: true });
+        await interaction.reply({ content: i18next.t('Error_search_log'), flags: 64 });
     }
 }
 // Функция для уведомления пользователя и логирования предупреждений
@@ -452,7 +452,7 @@ async function notifyUserAndLogWarn(interaction, memberToWarn, formattedDuration
         const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
         if (logChannelCreationResult.startsWith('Ошибка')) {
-            return interaction.reply({ content: logChannelCreationResult, ephemeral: true });
+            return interaction.reply({ content: logChannelCreationResult, flags: 64 });
         }
 
         logChannel = interaction.guild.channels.cache.find(ch => ch.name === channelNameToCreate);
@@ -574,7 +574,7 @@ async function validateSettingValue(settingKey, value, interaction, guildId) {
 
     // Отправка уведомления об ошибке, если значение не прошло валидацию
     if (!isValid) {
-        await interaction.followUp({ content: errorMessage, ephemeral: true });
+        await interaction.followUp({ content: errorMessage, flags: 64 });
     }
 
     return { isValid, value };
@@ -621,7 +621,7 @@ async function handleButtonInteraction(interaction, config, page) {
             await saveServerSettings(guildId, config);
 
             const successMessage = i18next.t(`settings-js_sucess_update`, { settingKey });
-            await interaction.followUp({ content: successMessage, ephemeral: true });
+            await interaction.followUp({ content: successMessage, flags: 64 });
 
             // Обновляем основное меню настроек
             await displaySettings(interaction, config, page);
@@ -638,7 +638,7 @@ async function handleButtonInteraction(interaction, config, page) {
                 config[settingKey] = validation.value;
                 await saveServerSettings(guildId, config);
                 const successMessage = i18next.t(`settings-js_sucess_update`, { settingKey });
-                await interaction.followUp({ content: successMessage, ephemeral: true });
+                await interaction.followUp({ content: successMessage, flags: 64 });
             }
         }
 
@@ -648,7 +648,7 @@ async function handleButtonInteraction(interaction, config, page) {
     } catch (error) {
         console.error('Ошибка при обработке кнопки:', error);
         if (!interaction.replied) {
-            await interaction.followUp({ content: 'Произошла ошибка. Пожалуйста, попробуйте позже.', ephemeral: true });
+            await interaction.followUp({ content: 'Произошла ошибка. Пожалуйста, попробуйте позже.', flags: 64 });
         }
     }
 }
@@ -760,7 +760,7 @@ async function promptUserForSettingValue(interaction, settingKey) {
     const filter = response => response.author.id === interaction.user.id;
 
     // Отправляем новое сообщение для запроса значения
-    await interaction.followUp({ content: i18next.t(`settings-js_enter_new_value`, { settingKey }), ephemeral: true });
+    await interaction.followUp({ content: i18next.t(`settings-js_enter_new_value`, { settingKey }), flags: 64 });
 
     try {
         const collected = await interaction.channel.awaitMessages({ filter, max: 1, time: 60000, errors: ['time'] });
@@ -774,7 +774,7 @@ async function promptUserForSettingValue(interaction, settingKey) {
         return newValue;
     } catch (err) {
         console.error('Ошибка при получении нового значения настройки:', err);
-        await interaction.followUp({ content: i18next.t('settings-js_times_is_up'), ephemeral: true });
+        await interaction.followUp({ content: i18next.t('settings-js_times_is_up'), flags: 64 });
         return null;
     }
 }

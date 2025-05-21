@@ -30,10 +30,10 @@ module.exports = {
   async execute(robot, interaction) {
     if (interaction.user.bot) return;
     if (interaction.channel.type === ChannelType.DM) {
-      return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+      return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
     }
     // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64  });
 
     try {
       // Проверяем, является ли пользователь ботом или используется команда в личных сообщениях
@@ -64,14 +64,14 @@ module.exports = {
       const botMember = guild.members.cache.get(robot.user.id);
       // Проверяем, имеет ли пользователь право 'BanMembers' и имеет ли бот это же право
       if (!member.roles.cache.some(role => role.permissions.has('BanMembers'))) {
-        return interaction.editReply({ content: i18next.t('BanMembers_user_check'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('BanMembers_user_check'), flags: 64  });
       }
       if (!botMember.roles.cache.some(role => role.permissions.has('BanMembers'))) {
-        return interaction.editReply({ content: i18next.t('BanMembers_bot_check'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('BanMembers_bot_check'), flags: 64  });
       }
       // Проверяем, имеет ли пользователь, которого собираются забанить, более высокую роль, чем у пользователя, который выполняет команду, или у бота
       if (user.roles.highest.comparePositionTo(interaction.member.roles.highest) > 0 || user.roles.highest.comparePositionTo(guild.members.cache.get(robot.user.id).roles.highest) > 0) {
-        return interaction.editReply({ content: i18next.t('ban-js_user_above_bot_or_author'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('ban-js_user_above_bot_or_author'), flags: 64  });
       }
 
       // Находим канал логирования на основе настроек сервера
@@ -91,7 +91,7 @@ module.exports = {
 
         // Выход из функции, если произошла ошибка при создании канала
         if (logChannelCreationResult.startsWith('Ошибка')) {
-          return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+          return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
         }
 
         // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -116,10 +116,10 @@ module.exports = {
       await logChannel.send({ embeds: [EmbedBan] });
 
       // Отвечаем пользователю, который выполнил команду, сообщением с подтверждением
-      await interaction.editReply({ content: i18next.t('ban-js_block_user_log_moderator', { user: userId, deletedMessagesCount }), ephemeral: true });
+      await interaction.editReply({ content: i18next.t('ban-js_block_user_log_moderator', { user: userId, deletedMessagesCount }), flags: 64  });
     } catch (error) {
       console.error(`Произошла ошибка: ${error.message}`);
-      return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+      return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
     }
   },
 };

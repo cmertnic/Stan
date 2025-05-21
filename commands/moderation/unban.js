@@ -28,7 +28,7 @@ module.exports = {
      */
     async execute(robot, interaction) {
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
 
         try {
             let userId;
@@ -37,7 +37,7 @@ module.exports = {
             // Предварительные проверки
             if (interaction.user.bot) return;
             if (interaction.channel.type === ChannelType.DM) {
-                return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+                return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
               }
 
             // Получение ID пользователя и причины разблокировки
@@ -69,7 +69,7 @@ module.exports = {
                 const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                 }
 
                 // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -78,23 +78,23 @@ module.exports = {
 
             // Проверки наличия необходимых элементов
             if (!userId) {
-                return interaction.editReply({ content: i18next.t('error_id_or_tag'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('error_id_or_tag'), flags: 64  });
 
             }
 
             // Проверка прав пользователя и бота
             if (!member.permissions.has('BanMembers')) {
-                return interaction.editReply({ content: i18next.t('BanMembers_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('BanMembers_user_check'), flags: 64  });
             }
 
             if (!botMember.permissions.has('BanMembers')) {
-                return interaction.editReply({ content: i18next.t('BanMembers_bot_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('BanMembers_bot_check'), flags: 64  });
             }
 
             // Проверка, заблокирован ли пользователь
             const bans = await interaction.guild.bans.fetch();
             if (!bans.has(userId)) {
-                return interaction.editReply({ content: i18next.t('unban-js_user_not_blocked'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('unban-js_user_not_blocked'), flags: 64  });
             }
 
             // Разблокировка пользователя
@@ -111,10 +111,10 @@ module.exports = {
             await logChannel.send({ embeds: [EmbedUnban] });
 
             // Отправка сообщения о завершении выполнения команды
-            await interaction.editReply({ content: i18next.t(`unban-js_unban_user_log_moderator`, { userId: userId, reason: reason }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t(`unban-js_unban_user_log_moderator`, { userId: userId, reason: reason }), flags: 64  });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
     }
 };

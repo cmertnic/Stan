@@ -14,17 +14,17 @@ module.exports = {
   async execute(robot, interaction) {
     if (interaction.user.bot) return;
     if (interaction.channel.type === ChannelType.DM) {
-      return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+      return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
     }
 
     const commandCooldown = userCommandCooldowns.get(interaction.user.id);
     if (commandCooldown && commandCooldown.command === 'language' && Date.now() < commandCooldown.endsAt) {
       const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-      return await interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), ephemeral: true });
+      return await interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), flags: 64  });
     }
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-      return await interaction.reply({ content: i18next.t('Admin_user_check'), ephemeral: true });
+      return await interaction.reply({ content: i18next.t('Admin_user_check'), flags: 64  });
     }
 
     const config = await getServerSettings(interaction.guildId) || { language: 'eng' };
@@ -49,7 +49,7 @@ module.exports = {
 
     await interaction.reply({
       components: [selectMenuRow],
-      ephemeral: true,
+      flags: 64 ,
     });
 
     const collector = interaction.channel.createMessageComponentCollector({

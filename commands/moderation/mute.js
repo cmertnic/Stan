@@ -38,10 +38,10 @@ module.exports = {
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
           }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         try {
             // Проверки и инициализация переменных
 
@@ -55,33 +55,33 @@ module.exports = {
             await createMutedRole(interaction, serverSettings);
 
             if (!mutedRole) {
-                return interaction.editReply({ content: i18next.t('mute-js_role_muted_error', { mutedRole: mutedRoleName }), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('mute-js_role_muted_error', { mutedRole: mutedRoleName }), flags: 64  });
             }
 
             const userIdToMute = interaction.options.getUser(USER_OPTION_NAME).id;
             const memberToMute = await interaction.guild.members.fetch(userIdToMute).catch(() => null);
 
             if (!memberToMute) {
-                return interaction.editReply({ content: i18next.t('mute-js_user_search_error'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('mute-js_user_search_error'), flags: 64  });
             }
 
             // Проверки прав пользователя и бота
             if (!interaction.member.permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
             }
 
             const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
             if (!botMember.permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), flags: 64  });
             }
 
             if (botMember.roles.highest.comparePositionTo(memberToMute.roles.highest) <= 0) {
-                return interaction.editReply({ content: i18next.t('error_highest_role'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('error_highest_role'), flags: 64  });
             }
 
             // Проверка, что пользователь не замьючен
             if (memberToMute.roles.cache.some(role => role.name === mutedRoleName)) {
-                return interaction.editReply({ content: i18next.t('mute-js_mute_error'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('mute-js_mute_error'), flags: 64  });
             }
 
             // Определение причины и продолжительности мута
@@ -110,10 +110,10 @@ module.exports = {
             });
 
             // Отправка сообщения о завершении выполнения команды
-            await interaction.editReply({ content: i18next.t('mute-js_mute_completed', { userIdToMute: userIdToMute, durationn: durationn }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('mute-js_mute_completed', { userIdToMute: userIdToMute, durationn: durationn }), flags: 64  });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
 
     }

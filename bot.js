@@ -150,7 +150,7 @@ const rest = new REST().setToken(process.env.TOKEN);
 
       const command = robot.commands.get(interaction.commandName);
       if (!command) {
-        await interaction.reply({ content: i18next.t('Error'), ephemeral: true });
+        await interaction.reply({ content: i18next.t('Error'), flags: 64 });
         return;
       }
 
@@ -167,7 +167,7 @@ const rest = new REST().setToken(process.env.TOKEN);
         await command.execute(robot, interaction);
       } catch (error) {
         console.error('Ошибка при выполнении команды:', error);
-        await interaction.reply({ content: i18next.t('Error'), ephemeral: true });
+        await interaction.reply({ content: i18next.t('Error'), flags: 64 });
       }
     });
 

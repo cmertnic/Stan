@@ -30,15 +30,15 @@ module.exports = {
     // Обработчик команды
     async execute(robot, interaction) {
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         try {
             // Предварительные проверки
             if (interaction.user.bot) return;
             if (interaction.channel.type === ChannelType.DM) {
-                return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+                return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
               }
             if (!interaction.member.permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
             }
 
             const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
@@ -47,7 +47,7 @@ module.exports = {
             }
             // Проверка прав бота
             if (!botMember.permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), flags: 64  });
             }
 
             // Получение настроек сервера
@@ -61,13 +61,13 @@ module.exports = {
             let userIdToDeleteWarning = interaction.options.getUser(USER_OPTION_NAME).id;
             userIdToDeleteWarning = validateUserId(userIdToDeleteWarning);
             if (!userIdToDeleteWarning) {
-                return interaction.editReply({ content: i18next.t('error_id_or_tag'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('error_id_or_tag'), flags: 64  });
             }
 
             // Получение информации о предупреждениях пользователя
             const userWarnings = await getUserWarnings(userIdToDeleteWarning);
             if (userWarnings.length === 0) {
-                return interaction.editReply({ content: i18next.t('deletewarn-js_error_non_active_warn'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('deletewarn-js_error_non_active_warn'), flags: 64  });
             }
 
             // Сортировка предупреждений по времени истечения (от самого свежего к старому)
@@ -97,7 +97,7 @@ module.exports = {
 
                 // Выход из функции, если произошла ошибка при создании канала
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                 }
 
                 // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -116,10 +116,10 @@ module.exports = {
 
             await logChannel.send({ embeds: [EmbedDeleteWarning] });
             // Отправка сообщения о завершении выполнения команды
-            await interaction.editReply({ content: i18next.t('deletewarn-js_block_user_mod', { userIdToDeleteWarning: userIdToDeleteWarning, reason: reason }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t('deletewarn-js_block_user_mod', { userIdToDeleteWarning: userIdToDeleteWarning, reason: reason }), flags: 64  });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
     }
 };

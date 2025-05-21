@@ -16,28 +16,28 @@ module.exports = {
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
           }
 
         const commandCooldown = userCommandCooldowns.get(interaction.user.id);
         if (commandCooldown && commandCooldown.command === 'warnlist' && Date.now() < commandCooldown.endsAt) {
           const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-          return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+          return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), flags: 64  });
         }
         // Откладываем ответ на запрос, чтобы можно было отправить несколько сообщений
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         try {
 
             const { member, guild } = interaction;
 
             // Проверка, существует ли член гильдии и имеет ли он роли
             if (!member || !member.roles) {
-                return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
             }
 
             // Проверка, имеет ли пользователь разрешение на модерирование членов
             if (!interaction.member.permissions.has('ModerateMembers')) {
-                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
             }
 
             // Получение всех активных предупреждений для сервера
@@ -45,7 +45,7 @@ module.exports = {
 
             // Проверка, есть ли активные предупреждения
             if (allActiveWarnings.length === 0) {
-                return interaction.editReply({ content: i18next.t('warnlist-js_no_active_warnings'), ephemeral: true });
+                return interaction.editReply({ content: i18next.t('warnlist-js_no_active_warnings'), flags: 64  });
             }
 
             const displayWarnings = async (page) => {
@@ -102,7 +102,7 @@ module.exports = {
                 }
 
                 // Отредактирование сообщения с предупреждениями и кнопками
-                await interaction.editReply({ embeds: [embed], components: rows, ephemeral: true });
+                await interaction.editReply({ embeds: [embed], components: rows, flags: 64  });
             };
 
             // Отображение первой страницы предупреждений
@@ -123,7 +123,7 @@ module.exports = {
             });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
         setTimeout(() => {
             userCommandCooldowns.delete(interaction.user.id);

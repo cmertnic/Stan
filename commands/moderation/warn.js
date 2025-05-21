@@ -33,10 +33,10 @@ module.exports = {
     async execute(robot, interaction, database) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
           }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         let hasReplied = false; // Флаг для отслеживания, был ли отправлен ответ
 
         try {
@@ -65,7 +65,7 @@ module.exports = {
                 const logChannelCreationResult = await createLogChannel(interaction, channelNameToCreate, botMember, higherRoles, serverSettings);
 
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    await interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    await interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                     hasReplied = true; // Устанавливаем флаг, что ответ был отправлен
                     return;
                 }
@@ -74,20 +74,20 @@ module.exports = {
             }
 
             if (!interaction.member.permissions.has('ModerateMembers') || !interaction.guild) {
-                await interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
                 hasReplied = true;
                 return;
             }
 
             if (!interaction.guild.members.cache.get(robot.user.id).permissions.has('ModerateMembers')) {
-                await interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('ModerateMembers_bot_check'), flags: 64  });
                 hasReplied = true;
                 return;
             }
 
             const userIdToWarn = interaction.options.getUser (USER_OPTION_NAME).id;
             if (!userIdToWarn) {
-                await interaction.editReply({ content: i18next.t('warn-js_error_user_id'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_error_user_id'), flags: 64  });
                 hasReplied = true;
                 return;
             }
@@ -95,13 +95,13 @@ module.exports = {
             const memberToWarn = await interaction.guild.members.fetch(userIdToWarn).catch(console.error);
 
             if (interaction.member.roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_bot'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_bot'), flags: 64  });
                 hasReplied = true;
                 return;
             }
 
             if (interaction.guild.members.cache.get(robot.user.id).roles.highest.comparePositionTo(memberToWarn.roles.highest) <= 0) {
-                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_user'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('warn-js_hierarchy_user'), flags: 64  });
                 hasReplied = true;
                 return;
             }
@@ -114,14 +114,14 @@ module.exports = {
 
             const formattedDuration = formatDuration(duration);
             if (!formattedDuration) {
-                await interaction.editReply({ content: t('warn-js_error_inkorect_duration'), ephemeral: true });
+                await interaction.editReply({ content: t('warn-js_error_inkorect_duration'), flags: 64  });
                 hasReplied = true;
                 return;
             }
 
             const warningsCount = await getWarningsCount(userIdToWarn);
             if (warningsCount >= maxWarnings) {
-                await interaction.editReply({ content: t(`warn-js_max_warns`, { userIdToWarn, maxWarnings }), ephemeral: true });
+                await interaction.editReply({ content: t(`warn-js_max_warns`, { userIdToWarn, maxWarnings }), flags: 64  });
                 hasReplied = true;
                 await logChannel.send({
                     embeds: [
@@ -145,12 +145,12 @@ module.exports = {
                     .catch(error => console.error(`Ошибка при удалении предупреждения: ${error}`));
             });
 
-            await interaction.editReply({ content: i18next.t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), ephemeral: true });
+            await interaction.editReply({ content: i18next.t(`warn-js_warn_user_log_moderator`, { memberToWarn: memberToWarn.id, formattedDuration, reason }), flags: 64  });
             hasReplied = true; // Устанавливаем флаг, что ответ был отправлен
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
             if (!hasReplied) {
-                await interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+                await interaction.editReply({ content: i18next.t('Error'), flags: 64  });
             }
         }
     },

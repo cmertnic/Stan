@@ -10,11 +10,11 @@
   "author": "cmertnic",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "i18next": "^23.16.5",
-    "i18next-fs-backend": "^2.3.2",
-    "node-cron": "^3.0.3",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
+    "i18next": "25.2.0",
+    "i18next-fs-backend": "^2.6.0",
+    "node-cron": "4.0.6",
     "node-schedule": "^2.1.1",
     "sqlite3": "^5.1.7"
   },

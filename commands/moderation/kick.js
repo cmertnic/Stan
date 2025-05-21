@@ -28,10 +28,10 @@ module.exports = {
     async execute(robot, interaction) {
         if (interaction.user.bot) return;
         if (interaction.channel.type === ChannelType.DM) {
-            return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+            return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
           }
         // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64  });
         try {
             // Проверка, что пользователь не бот и сообщение не находится в личных сообщениях
 
@@ -49,20 +49,20 @@ module.exports = {
 
             // Проверки наличия необходимых элементов
             if (!userId || !userToKick) {
-                return interaction.editReply({ content: (i18next.t('error_id_or_tag')), ephemeral: true });
+                return interaction.editReply({ content: (i18next.t('error_id_or_tag')), flags: 64  });
             }
 
             // Проверка прав пользователя и бота на 'KickMembers'
             const member = interaction.member;
             if (!member.permissions.has('KickMembers')) {
-                return interaction.editReply({ content: (i18next.t('KickMembers_user_check')), ephemeral: true });
+                return interaction.editReply({ content: (i18next.t('KickMembers_user_check')), flags: 64  });
             }
             const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
             if (!botMember.permissions.has('KickMembers')) {
-                return interaction.editReply({ content: (i18next.t('KickMembers_bot_check')), ephemeral: true });
+                return interaction.editReply({ content: (i18next.t('KickMembers_bot_check')), flags: 64  });
             }
             if (userToKick.roles.highest.comparePositionTo(botMember.roles.highest) >= 0) {
-                return interaction.editReply({ content: (i18next.t('error_highest_role')), ephemeral: true });
+                return interaction.editReply({ content: (i18next.t('error_highest_role')), flags: 64  });
             }
 
             // Определение причины исключения
@@ -85,7 +85,7 @@ module.exports = {
 
                 // Выход из функции, если произошла ошибка при создании канала
                 if (logChannelCreationResult.startsWith('Ошибка')) {
-                    return interaction.editReply({ content: logChannelCreationResult, ephemeral: true });
+                    return interaction.editReply({ content: logChannelCreationResult, flags: 64  });
                 }
 
                 // Переопределяем переменную logChannel, так как она теперь может содержать новый канал
@@ -104,16 +104,16 @@ module.exports = {
 
                 await logChannel.send({ embeds: [EmbedKickUser] });
             } catch (error) {
-                return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), ephemeral: true });
+                return interaction.editReply(interaction, { content: i18next.t(`Error_log`, { error: error }), flags: 64  });
             }
 
             // Отправка сообщения о завершении выполнения команды
             await interaction.editReply({
-                content: i18next.t('kick-js_kick_user_log_moderator', { userDisplayName: userToKick, reason: reason }), ephemeral: true
+                content: i18next.t('kick-js_kick_user_log_moderator', { userDisplayName: userToKick, reason: reason }), flags: 64 
             });
         } catch (error) {
             console.error(`Произошла ошибка: ${error.message}`);
-            return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+            return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
         }
 
 

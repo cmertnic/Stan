@@ -18,25 +18,25 @@ module.exports = {
     const commandCooldown = userCommandCooldowns.get(interaction.user.id);
     if (commandCooldown && commandCooldown.command === 'mutelist' && Date.now() < commandCooldown.endsAt) {
       const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), ephemeral: true });
+      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft})), flags: 64  });
     }
     try {
       // Проверка, что пользователь не бот
       if (interaction.user.bot) return;
       if (interaction.channel.type === ChannelType.DM) {
-        return await interaction.editReply({ content: i18next.t('error_private_messages'), ephemeral: true });
+        return await interaction.editReply({ content: i18next.t('error_private_messages'), flags: 64  });
       }
 
       const { member, guild } = interaction;
 
       // Проверка, что пользователь является членом сервера и имеет роли
       if (!member || !member.roles) {
-        return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
       }
 
       // Проверка, что пользователь имеет права модерирования
       if (!interaction.member.permissions.has('ModerateMembers')) {
-        await interaction.reply({ content: i18next.t('ModerateMembers_user_check'), ephemeral: true });
+        await interaction.reply({ content: i18next.t('ModerateMembers_user_check'), flags: 64  });
         return;
       }
 
@@ -45,7 +45,7 @@ module.exports = {
 
       // Проверка, что есть активные муты
       if (mutes.length === 0) {
-        interaction.editReply({ content: i18next.t('mutelist-js_no_active_mutes'), ephemeral: true });
+        interaction.editReply({ content: i18next.t('mutelist-js_no_active_mutes'), flags: 64  });
         return;
       }
 
@@ -102,7 +102,7 @@ module.exports = {
         }
 
         // Отправка embed с кнопками
-        await interaction.editReply({ embeds: [embed], components: rows, ephemeral: true });
+        await interaction.editReply({ embeds: [embed], components: rows, flags: 64  });
       };
 
       // Отображение первой страницы мутов
@@ -125,7 +125,7 @@ module.exports = {
       });
     } catch (error) {
       console.error(`Произошла ошибка: ${error.message}`);
-      return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+      return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
     }
     setTimeout(() => {
       userCommandCooldowns.delete(interaction.user.id);

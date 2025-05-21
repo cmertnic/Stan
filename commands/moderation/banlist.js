@@ -9,16 +9,16 @@ module.exports = {
 
   async execute(robot, interaction) {
     // Откладываем ответ, чтобы бот не блокировался во время выполнения команды
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64  });
     const commandCooldown = userCommandCooldowns.get(interaction.user.id);
     if (commandCooldown && commandCooldown.command === 'banlist' && Date.now() < commandCooldown.endsAt) {
       const timeLeft = Math.round((commandCooldown.endsAt - Date.now()) / 1000);
-      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), ephemeral: true });
+      return interaction.reply({ content: (i18next.t(`cooldown`, { timeLeft: timeLeft })), flags: 64  });
     }
     try {
       if (interaction.user.bot) return;
       if (interaction.channel.type === ChannelType.DM) {
-        return await interaction.reply({ content: i18next.t('error_private_messages'), ephemeral: true });
+        return await interaction.reply({ content: i18next.t('error_private_messages'), flags: 64  });
       }
 
       // количество пользователей на одной странице и текущую страницу
@@ -28,26 +28,26 @@ module.exports = {
 
       // является ли пользователь членом сервера и имеет ли он роли
       if (!member || !member.roles) {
-        return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
       }
 
       // имеет ли пользователь право на бан других пользователей
       if (!member.roles.cache.some(role => role.permissions.has(PermissionsBitField.Flags.BanMembers))) {
-        return interaction.editReply({ content: i18next.t('BanMembers_user_check'), ephemeral: true });
+        return interaction.editReply({ content: i18next.t('BanMembers_user_check'), flags: 64  });
       }
 
       // список забаненных пользователей
       const banlistUsers = await guild.bans.fetch().catch(() => {
         if (!interaction.deferred && !interaction.replied) {
-          interaction.reply({ content: i18next.t('banlist-js_error_fetching_banlist'), ephemeral: true });
+          interaction.reply({ content: i18next.t('banlist-js_error_fetching_banlist'), flags: 64  });
         } else {
-          interaction.editReply({ content: i18next.t('banlist-js_error_fetching_banlist'), ephemeral: true });
+          interaction.editReply({ content: i18next.t('banlist-js_error_fetching_banlist'), flags: 64  });
         }
         throw new Error('Failed to fetch banlist');
       });
 
       if (banlistUsers.size === 0) {
-        interaction.editReply({ content: i18next.t('banlist-js_no_banned_users'), ephemeral: true });
+        interaction.editReply({ content: i18next.t('banlist-js_no_banned_users'), flags: 64  });
         return;
       }
 
@@ -99,7 +99,7 @@ module.exports = {
           }
         }
 
-        await interaction.editReply({ embeds: [embed], components: rows, ephemeral: true });
+        await interaction.editReply({ embeds: [embed], components: rows, flags: 64  });
       };
 
       // Если пагинация не нужна, отображаем список забаненных пользователей на первой странице
@@ -110,7 +110,7 @@ module.exports = {
           .setDescription(slicedUsers.map(ban => `**<@${ban.user.id}>** - ${ban.reason || i18next.t('defaultReason')}`).join('\n'))
           .setFooter({ text: i18next.t(`banlist-js_users_banned`, { current_page: 1, total_pages: totalPages }) });
 
-        await interaction.editReply({ embeds: [embed], ephemeral: true });
+        await interaction.editReply({ embeds: [embed], flags: 64  });
       } else {
         // Если пагинация нужна, отображаем список забаненных пользователей на текущей странице
         await displayBanlist(currentPage);
@@ -132,7 +132,7 @@ module.exports = {
       });
     } catch (error) {
       console.error(`Произошла ошибка: ${error.message}`);
-      return interaction.editReply({ content: i18next.t('Error'), ephemeral: true });
+      return interaction.editReply({ content: i18next.t('Error'), flags: 64  });
     }
     setTimeout(() => {
       userCommandCooldowns.delete(interaction.user.id);
