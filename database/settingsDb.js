@@ -103,7 +103,7 @@ function saveServerSettings(guildId, settings) {
         maxWarnings, warningsNotice, banLogChannelName, banLogChannelNameUse, deletingMessagesFromBannedUsers, kickLogChannelName, kickLogChannelNameUse,
         reportLogChannelName, reportLogChannelNameUse, clearLogChannelName, clearLogChannelNameUse, clearNotice, logChannelName, language,
         automod, NotAutomodChannels, automodBlacklist, automodBadLinks, uniteautomodblacklists, uniteAutomodBadLinks, manRoleName, girlRoleName, newMemberRoleName,newMemberRoleNameUse )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         guildId, muteLogChannelName, muteLogChannelNameUse, mutedRoleName, muteDuration, muteNotice,
         warningLogChannelName, warningLogChannelNameUse, warningDuration, maxWarnings, warningsNotice,
@@ -174,7 +174,7 @@ async function initializeDefaultServerSettings(guildId, allGuildIds) {
         manRoleName: process.env.MANROLENAME || '♂',
         girlRoleName: process.env.GIRLROLENAME || '♀',
         newMemberRoleName: process.env.NEWMEMBERROLENAME || 'NewMember',
-        newMemberRoleNameUse: process.env.NEWMEMBERROLENAMEUSE === '0' ? false : true,
+        newMemberRoleNameUse: process.env.NEWMEMBERROLENAME_USE === '0' ? false : true
       };
       await saveServerSettings(guildId, defaultSettings);
       console.log(`Настройки по умолчанию инициализированы для сервера: ${guildId}`);

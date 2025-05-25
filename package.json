@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node bot.js",
-    "preinstall": "npx npm-force-resolutions"
+    "preinstall": "npx npm-force-resolutions || true"
   },
   "author": "cmertnic",
   "license": "ISC",
@@ -16,7 +16,8 @@
     "i18next-fs-backend": "^2.6.0",
     "node-cron": "4.0.6",
     "node-schedule": "^2.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "npm-force-resolutions": "^0.0.10"
   },
   "resolutions": {
     "discord.js": "14.15.3"

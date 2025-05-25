@@ -612,7 +612,8 @@ async function handleButtonInteraction(interaction, config, page) {
             'reportLogChannelNameUse',
             'automod',
             'uniteautomodblacklists',
-            'uniteAutomodBadLinks'
+            'uniteAutomodBadLinks',
+            'newMemberRoleNameUse'
         ];
 
         if (booleanSettings.includes(settingKey)) {
@@ -723,8 +724,7 @@ async function displaySettings(interaction, config, page = 1) {
         { key: 'manRoleName', name: i18next.t('settings-js_buttons_name_29'), value: String(config.manRoleName) },
         { key: 'girlRoleName', name: i18next.t('settings-js_buttons_name_30'), value: String(config.girlRoleName) },
         { key: 'newMemberRoleName', name: i18next.t('settings-js_buttons_name_31'), value: String(config.newMemberRoleName) },
-        { key: 'newMemberRoleNameUse', name: i18next.t('settings-js_buttons_name_32'), value:config.newMemberRoleNameUse=== 1 ? '✅' : '❌' },
-        
+        { key: 'newMemberRoleNameUse', name: i18next.t('settings-js_buttons_name_32'), value: config.newMemberRoleNameUse === 1 ? '✅' : '❌' }
     ];
 
 
